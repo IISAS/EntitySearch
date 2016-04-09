@@ -5,11 +5,11 @@ import word2vec.*;
 /**
  * Created by agibsonccc on 10/9/14.
  */
-public class Word2VecEngine {
+public class GloVeEngine {
 
 	public GenericWordSpace model;
 
-	public Word2VecEngine(boolean glove) {
+	public GloVeEngine(boolean glove) {
 
 		if (glove) {
 			model = new GloVeSpace();

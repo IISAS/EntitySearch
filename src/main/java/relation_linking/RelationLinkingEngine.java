@@ -11,13 +11,16 @@ import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.process.DocumentPreprocessor;
 
 public class RelationLinkingEngine {
+	
+	private static boolean checkGlove = true;
+	private static boolean checkWordNet = true;
+	private static boolean checkOpenIE = true;
 
 	private static PrintWriter output;
 	private static DBPediaOntologyExtractor doe;
 	private static FBCategoriesExtractor fce;
 	private static int numberOfMatches;
-	private static Word2VecEngine wtv;
-	private static Word2VecEngine glove;
+	private static GloVeEngine glove;
 
 	public static void main(String[] args) throws Exception {
 
@@ -25,7 +28,7 @@ public class RelationLinkingEngine {
         List<Record> records = dataset.loadWebquestions();
 		doe = new DBPediaOntologyExtractor("/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt");
 		fce = new FBCategoriesExtractor();
-		glove = new Word2VecEngine(true);
+		glove = new GloVeEngine(true);
 		//wtv = new Word2VecEngine(false);
 		//LexicalParsingEngine lp = new LexicalParsingEngine();
 
@@ -115,7 +118,7 @@ public class RelationLinkingEngine {
 		return matched;
 	}
 
-	private static boolean isSentenceSimilarToWords(String sentence, Word2VecEngine w2v) {
+	private static boolean isSentenceSimilarToWords(String sentence, GloVeEngine w2v) {
 		boolean matched = false;
 
 		for (String relation : doe.getLowerDBPediaRelations()) {
