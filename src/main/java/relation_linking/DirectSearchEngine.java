@@ -12,12 +12,12 @@ public class DirectSearchEngine {
 	private FBCategoriesExtractor fce;
 	private int matchedInSentence;
 
-	public DirectSearchEngine(DBPediaOntologyExtractor doe, FBCategoriesExtractor fce) {
+	public DirectSearchEngine() {
 
 		System.out.println("Initializing Direct search engine...");
 
-		this.doe = doe;
-		this.fce = fce;
+		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
+		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
 	}
 
 	protected int getMatchedInSentence() {
@@ -48,12 +48,16 @@ public class DirectSearchEngine {
 					results.add(sWord);
 					matchedInSentence++;
 				}
-				if (isInComposedDBPediaRelations(word.get(i), word)) {
-					results.add(sWord);
+				
+				String matched = isInComposedDBPediaRelations(word.get(i), word);
+				if (matched != null) {
+					results.add(matched);
 					matchedInSentence++;
 				}
-				if (isInComposedFBRelations(word.get(i), word)) {
-					results.add(sWord);
+				
+				matched = isInComposedFBRelations(word.get(i), word);
+				if (matched != null) {
+					results.add(matched);
 					matchedInSentence++;
 				}
 			}
@@ -69,17 +73,17 @@ public class DirectSearchEngine {
 	private boolean isFBCategory(String word) {
 		return fce.getCategories().contains(word);
 	}
-
-	private boolean isInComposedDBPediaRelations(HasWord word, List<HasWord> sentence) {
+	
+	private String findComposedRelation(HasWord word, List<HasWord> sentence, boolean Freebase, Map<String, String> cleanTypes){
 		boolean matched = false;
 		String key = new String();
 
-		for (Map.Entry<String, String> entry : doe.getCleanDBPediaTypes().entrySet()) {
+		for (Map.Entry<String, String> entry : cleanTypes.entrySet()) {
 			if (entry.getValue().toLowerCase().equals(word.toString().toLowerCase())) {
 				int wordIndex = sentence.indexOf(word);
 				key = entry.getKey();
 				key = key.substring(0, key.length() - 1);
-				String[] r = doe.splitKey(key);
+				String[] r = Freebase ? fce.splitKey(key) : doe.splitKey(key);
 				if (word.toString().toLowerCase().equals(r[0].toLowerCase())) {
 					matched = true;
 					for (int i = 1; i < r.length; i++) {
@@ -93,40 +97,18 @@ public class DirectSearchEngine {
 					}
 				}
 				if (matched) {
-					return matched;
+					return key;
 				}
 			}
 		}
-		return matched;
+		return null;
 	}
 
-	private boolean isInComposedFBRelations(HasWord word, List<HasWord> sentence) {
-		boolean matched = false;
-		String key = new String();
+	private String isInComposedDBPediaRelations(HasWord word, List<HasWord> sentence) {
+		return findComposedRelation(word, sentence, false, doe.getCleanDBPediaTypes());
+	}
 
-		for (Map.Entry<String, String> entry : fce.getCleanFBCategories().entrySet()) {
-			if (entry.getValue().equals(word.toString().toLowerCase())) {
-				int wordIndex = sentence.indexOf(word);
-				key = entry.getKey();
-				key = key.substring(0, key.length() - 1);
-				String[] r = fce.splitKey(key);
-				if (word.toString().toLowerCase().equals(r[0])) {
-					matched = true;
-					for (int i = 1; i < r.length; i++) {
-						if (sentence.size() < r.length + wordIndex) {
-							matched = false;
-							break;
-						} else if (!r[i].equals(sentence.get(wordIndex + i).toString().toLowerCase())) {
-							matched = false;
-							break;
-						}
-					}
-				}
-				if (matched) {
-					return matched;
-				}
-			}
-		}
-		return matched;
+	private String isInComposedFBRelations(HasWord word, List<HasWord> sentence) {
+		return findComposedRelation(word, sentence, true, fce.getCleanFBCategories());
 	}
 }

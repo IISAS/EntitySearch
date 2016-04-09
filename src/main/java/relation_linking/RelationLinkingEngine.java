@@ -11,15 +11,18 @@ public class RelationLinkingEngine {
 		DIRECT, GLOVE, WORDNET, OPENIE;
 	}
 
-	private static boolean directCheck = true;
-	private static boolean checkGlove = false;
+	private static boolean directCheck = false;
+	private static boolean checkGlove = true;
 	private static boolean checkWordNet = false;
 	private static boolean checkOpenIE = false;
 
-	private static boolean withLexicalParser = false;
+	private static boolean withLexicalParser = true;
+	
+	private static double similarity = 0.9;
 
 	private static String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelationDataset.json";
 	private static String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
+	private static String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.50d.txt";
 	private static String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
 	private static String outputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
 
@@ -56,14 +59,14 @@ public class RelationLinkingEngine {
 		fce = new FBCategoriesExtractor();
 
 		if (directCheck)
-			dse = new DirectSearchEngine(doe, fce);
+			dse = new DirectSearchEngine();
 
 		if (checkGlove) {
 			if (withLexicalParser) {
 				LexicalParsingEngine lpe = new LexicalParsingEngine(lexicalParserModel);
-				glove = new GloVeEngine(true);
+				glove = new GloVeEngine(gloveModelPath, similarity, lpe);
 			} else {
-				glove = new GloVeEngine(true);
+				glove = new GloVeEngine(gloveModelPath, similarity);
 			}
 		}
 
@@ -79,7 +82,7 @@ public class RelationLinkingEngine {
 				printFoundRelations(dse.getRelations(record.getUtterance()), METHOD_TYPE.DIRECT, record.getUtterance());
 
 			if (checkGlove)
-				System.out.println("ToDo");
+				printFoundRelations(glove.getRelations(record.getUtterance()), METHOD_TYPE.GLOVE, record.getUtterance());
 			
 			if (checkWordNet)
 				System.out.println("ToDo");
@@ -137,5 +140,13 @@ public class RelationLinkingEngine {
 				break;
 			}
 		}
+	}
+	
+	public static DBPediaOntologyExtractor getDBPediaOntologyExtractor(){
+		return doe;
+	}
+	
+	public static FBCategoriesExtractor getFBCategoriesExtractor(){
+		return fce;
 	}
 }

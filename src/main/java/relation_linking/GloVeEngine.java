@@ -1,94 +1,170 @@
 package relation_linking;
 
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.*;
+
+import edu.stanford.nlp.ling.HasWord;
+import edu.stanford.nlp.process.DocumentPreprocessor;
 import word2vec.*;
 
-/**
- * Created by agibsonccc on 10/9/14.
- */
 public class GloVeEngine {
 
-	public GenericWordSpace model;
+	private DBPediaOntologyExtractor doe;
+	private FBCategoriesExtractor fce;
+	private LexicalParsingEngine lpe;
 
-	public GloVeEngine(boolean glove) {
+	private double similarity;
+
+	private GloVeSpace model;
+
+	private int matchedInSentence;
+
+	public GloVeEngine(String modelPath, double similarity) {
 
 		System.out.println("Initializing Glove search engine...");
-		
-		if (glove) {
-			model = new GloVeSpace();
-			model = GloVeSpace.load("/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.50d.txt", false,
-					false);
-			System.out.println(model.sentenceVector("married to") + ":" + model.vector("spouse"));
-			System.out.println(model.distanceSimilarity(model.sentenceVector("married to"), model.vector("spouse")));
-		} else {
-			model = new W2vSpace();
-			model = W2vSpace.loadText(
-					"/Users/fjuras/OneDriveBusiness/DPResources/freebase-vectors-skipgram1000-en.bin.gz", false, false);
-			System.out.println(model.sentenceVector("married to") + ":" + model.vector("spouse"));
-			System.out.println(model.distanceSimilarity(model.sentenceVector("married to"), model.vector("spouse")));
+
+		model = new GloVeSpace();
+		model = GloVeSpace.load(modelPath, false, false);
+		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
+		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
+		this.similarity = similarity;
+	}
+
+	public GloVeEngine(String modelPath, double similarity, LexicalParsingEngine lpe) {
+		System.out.println("Initializing Glove search engine with lexical parser...");
+
+		model = new GloVeSpace();
+		model = GloVeSpace.load(modelPath, false, false);
+		this.lpe = lpe;
+		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
+		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
+		this.similarity = similarity;
+	}
+
+	public ArrayList<String> getRelations(String sentence) {
+		System.out.println("Getting glove relations...");
+
+		ArrayList<String> results = new ArrayList<String>();
+
+		Reader reader = new StringReader(sentence);
+
+		for (Iterator<List<HasWord>> iterator = new DocumentPreprocessor(reader).iterator(); iterator.hasNext();) {
+			List<HasWord> word = iterator.next();
+
+			matchedInSentence = 0;
+
+			for (int i = 0; i < word.size(); i++) {
+				String sWord = word.get(i).toString();
+
+				String relation = isDBPediaRelation(sWord);
+				if (relation != null) {
+					results.add(relation);
+					matchedInSentence++;
+				}
+
+				relation = isFBCategory(sWord);
+				if (relation != null) {
+					results.add(sWord);
+					matchedInSentence++;
+				}
+
+				relation = isInComposedDBPediaRelations(sWord);
+				if (relation != null) {
+					results.add(sWord);
+					matchedInSentence++;
+				}
+				
+				relation = isInComposedFBRelations(sWord); 
+				if (relation != null) {
+					results.add(sWord);
+					matchedInSentence++;
+				}
+			}
 		}
+
+		return results;
 	}
 
-	public double getSimilarity(String sentence, String word) {
-		System.out.println(sentence + " : " + word + " = ");
-		double similarity = model.distanceSimilarity(model.sentenceVector(sentence), model.vector(word));
-		System.out.println(similarity);
+	private double getSimilarity(String sentence, String word) {
+		double similarity = 0;
+		if (isWordInModel(word) && canBeSentenceVectorized(sentence))
+			similarity = model.distanceSimilarity(model.sentenceVector(sentence), model.vector(word));
 		return similarity;
 	}
 
-	public double getWordsSimilarity(String word1, String word2) {
-		System.out.println(word1 + " : " +word2 + " = ");
+	private double getWordsSimilarity(String word1, String word2) {
 		double similarity = model.distanceSimilarity(word1, word2);
-		System.out.println(similarity);
 		return similarity;
 	}
 
-	public boolean isWordInModel(String word) {
+	private boolean isWordInModel(String word) {
 		return model.contains(word);
 	}
-	
-	public boolean canBeSentenceVectorized(String sentence){
+
+	private boolean canBeSentenceVectorized(String sentence) {
 		return model.sentenceVector(sentence) == null ? false : true;
 	}
-	
-	
-	// if (isSentenceSimilarToWords(sentence, glove)) {
-	// matched = true;
-	// output.println(sentence);
-	// }
-	//
-	
-	
-//	private boolean isSentenceSimilarToWords(String sentence, GloVeEngine w2v) {
-//		boolean matched = false;
-//
-//		for (String relation : doe.getLowerDBPediaRelations()) {
-//			if (w2v.isWordInModel(relation) && w2v.canBeSentenceVectorized(sentence)
-//					&& w2v.getSimilarity(sentence, relation) > 0.05) {
-//				matched = true;
-//				output.println("Word2VecSimilarityWith:" + relation);
-//			}
-//		}
-//
-//		return matched;
-//	}
-//
-//	private boolean areWordsSimilar(String word) {
-//		boolean matched = false;
-//
-//		for (String relation : doe.getLowerDBPediaRelations()) {
-//			if (glove.isWordInModel(word) && glove.isWordInModel(relation)
-//					&& glove.getWordsSimilarity(word, relation) > 0.28) {
-//				matched = true;
-//				output.println("Word2VecSimilarityWith:" + relation);
-//			}
-//		}
-//		return matched;
-//	}
-	
-//	
-//	else if (areWordsSimilar(word.get(i).toString().toLowerCase())) {
-//		matchedInSentence++;
-//	}
-	
-	
+
+	private String makeSentenceFromSequence(String[] r) {
+		StringBuilder sentence = new StringBuilder();
+		for (int i = 0; i < r.length; i++) {
+			sentence.append(r[i]);
+			sentence.append(" ");
+		}
+		return sentence.toString();
+	}
+
+	private String findComposedRelation(String word, boolean Freebase, Map<String, String> cleanTypes) {
+		double maxSimilarity = 0;
+		String maxRelation = null;
+		String key;
+
+		for (Map.Entry<String, String> entry : cleanTypes.entrySet()) {
+			key = entry.getKey();
+			key = key.substring(0, key.length() - 1);
+			String[] r = Freebase ? fce.splitKey(key) : doe.splitKey(key);
+			String sentence = makeSentenceFromSequence(r);
+			double tSim = getSimilarity(sentence, word);
+			if (tSim > similarity && tSim > maxSimilarity) {
+				maxRelation = key;
+				maxSimilarity = tSim;
+			}
+
+		}
+		return maxRelation;
+	}
+
+	private String isInComposedDBPediaRelations(String word) {
+		return findComposedRelation(word, false, doe.getCleanDBPediaTypes());
+	}
+
+	private String isInComposedFBRelations(String word) {
+		return findComposedRelation(word, true, fce.getCleanFBCategories());
+	}
+
+	private String findRelation(String word, ArrayList<String> relations) {
+		double maxSimilarity = 0;
+		String maxRelation = null;
+
+		for (String relation : relations) {
+
+			if (isWordInModel(word) && isWordInModel(relation)) {
+				double tSim = getWordsSimilarity(word, relation);
+				if (tSim > similarity && tSim > maxSimilarity) {
+					maxRelation = relation;
+					maxSimilarity = tSim;
+				}
+			}
+		}
+		return maxRelation;
+	}
+
+	private String isDBPediaRelation(String word) {
+		return findRelation(word, doe.getLowerDBPediaRelations());
+	}
+
+	private String isFBCategory(String word) {
+		return findRelation(word, fce.getCategories());
+	}
 }

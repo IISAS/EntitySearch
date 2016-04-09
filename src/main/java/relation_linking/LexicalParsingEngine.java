@@ -12,18 +12,16 @@ import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 public class LexicalParsingEngine {
 	
 	LexicalizedParser lp;
-	private PrintWriter output;
 
 	public LexicalParsingEngine(String parserModel) throws FileNotFoundException, UnsupportedEncodingException {
 		
 		System.out.println("Initializing Lexical Parser...");
 		lp = LexicalizedParser.loadModel(parserModel);
-		output = new PrintWriter("/Users/fjuras/OneDriveBusiness/DPResources/LexicalParser.txt", "UTF-8");
 	}
 
 	public void parseSentence(String text) {
-
-		output.println(text);
+		System.out.println("Parsing sentence...");
+		
 		TreebankLanguagePack tlp = lp.treebankLanguagePack();
 		GrammaticalStructureFactory gsf = null;
 		if (tlp.supportsGrammaticalStructures()) {
@@ -41,15 +39,9 @@ public class LexicalParsingEngine {
 				GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
 				Collection<TypedDependency> tdl = gs.typedDependenciesCollapsed();
 				System.out.println(tdl);
-				output.println(tdl);
-				output.println();
 			}
 		}
 	}
 	
-	public void endOfParsing(){
-		output.close();
-		output = null;
-	}
 
 }
