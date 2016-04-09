@@ -11,6 +11,8 @@ public class GloVeEngine {
 
 	public GloVeEngine(boolean glove) {
 
+		System.out.println("Initializing Glove search engine...");
+		
 		if (glove) {
 			model = new GloVeSpace();
 			model = GloVeSpace.load("/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.50d.txt", false,
@@ -47,4 +49,46 @@ public class GloVeEngine {
 	public boolean canBeSentenceVectorized(String sentence){
 		return model.sentenceVector(sentence) == null ? false : true;
 	}
+	
+	
+	// if (isSentenceSimilarToWords(sentence, glove)) {
+	// matched = true;
+	// output.println(sentence);
+	// }
+	//
+	
+	
+//	private boolean isSentenceSimilarToWords(String sentence, GloVeEngine w2v) {
+//		boolean matched = false;
+//
+//		for (String relation : doe.getLowerDBPediaRelations()) {
+//			if (w2v.isWordInModel(relation) && w2v.canBeSentenceVectorized(sentence)
+//					&& w2v.getSimilarity(sentence, relation) > 0.05) {
+//				matched = true;
+//				output.println("Word2VecSimilarityWith:" + relation);
+//			}
+//		}
+//
+//		return matched;
+//	}
+//
+//	private boolean areWordsSimilar(String word) {
+//		boolean matched = false;
+//
+//		for (String relation : doe.getLowerDBPediaRelations()) {
+//			if (glove.isWordInModel(word) && glove.isWordInModel(relation)
+//					&& glove.getWordsSimilarity(word, relation) > 0.28) {
+//				matched = true;
+//				output.println("Word2VecSimilarityWith:" + relation);
+//			}
+//		}
+//		return matched;
+//	}
+	
+//	
+//	else if (areWordsSimilar(word.get(i).toString().toLowerCase())) {
+//		matchedInSentence++;
+//	}
+	
+	
 }

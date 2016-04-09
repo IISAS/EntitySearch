@@ -14,9 +14,9 @@ public class LexicalParsingEngine {
 	LexicalizedParser lp;
 	private PrintWriter output;
 
-	public LexicalParsingEngine() throws FileNotFoundException, UnsupportedEncodingException {
-
-		String parserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
+	public LexicalParsingEngine(String parserModel) throws FileNotFoundException, UnsupportedEncodingException {
+		
+		System.out.println("Initializing Lexical Parser...");
 		lp = LexicalizedParser.loadModel(parserModel);
 		output = new PrintWriter("/Users/fjuras/OneDriveBusiness/DPResources/LexicalParser.txt", "UTF-8");
 	}

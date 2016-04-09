@@ -1,198 +1,141 @@
 package relation_linking;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import DP_entity_linking.dataset.*;
-import edu.stanford.nlp.ling.HasWord;
-import edu.stanford.nlp.process.DocumentPreprocessor;
 
 public class RelationLinkingEngine {
-	
-	private static boolean checkGlove = true;
-	private static boolean checkWordNet = true;
-	private static boolean checkOpenIE = true;
 
-	private static PrintWriter output;
+	private enum METHOD_TYPE {
+		DIRECT, GLOVE, WORDNET, OPENIE;
+	}
+
+	private static boolean directCheck = true;
+	private static boolean checkGlove = false;
+	private static boolean checkWordNet = false;
+	private static boolean checkOpenIE = false;
+
+	private static boolean withLexicalParser = false;
+
+	private static String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelationDataset.json";
+	private static String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
+	private static String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
+	private static String outputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
+
+	private static String outputUtteranceKey = "utterance";
+	private static String outputRelationKey = "relation";
+	private static String outputDetectedKey = "detected";
+	private static String outputSeparator = ";";
+	private static String outputDirectKey = "Direct";
+	private static String outputGloveKey = "GloVe";
+	private static String outputWordNetKey = "WordNet";
+	private static String outputOpenIEKey = "OpenIE";
+	private static String outputTrueValue = "1";
+	private static String outputFalseValue = "0";
+
 	private static DBPediaOntologyExtractor doe;
 	private static FBCategoriesExtractor fce;
-	private static int numberOfMatches;
+
+	private static FileWriter output;
+
+	private static DirectSearchEngine dse;
 	private static GloVeEngine glove;
 
 	public static void main(String[] args) throws Exception {
 
-		DataSet dataset = new DataSet("/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelationDataset.json");
-        List<Record> records = dataset.loadWebquestions();
-		doe = new DBPediaOntologyExtractor("/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt");
-		fce = new FBCategoriesExtractor();
-		glove = new GloVeEngine(true);
-		//wtv = new Word2VecEngine(false);
-		//LexicalParsingEngine lp = new LexicalParsingEngine();
+		System.out.println("Reading dataset...");
+		DataSet dataset = new DataSet(datasetPath);
+		List<Record> records = dataset.loadWebquestions();
 
-		output = new PrintWriter("/Users/fjuras/OneDriveBusiness/DPResources/Relations.txt", "UTF-8");
-		numberOfMatches = 0;
-		int numberOfRecords = 0;
+		output = new FileWriter(outputPath);
+		printRow(outputUtteranceKey, outputRelationKey, outputDirectKey, outputGloveKey, outputWordNetKey,
+				outputOpenIEKey, outputDetectedKey);
+
+		doe = new DBPediaOntologyExtractor(dbPediaOntologyPath);
+		fce = new FBCategoriesExtractor();
+
+		if (directCheck)
+			dse = new DirectSearchEngine(doe, fce);
+
+		if (checkGlove) {
+			if (withLexicalParser) {
+				LexicalParsingEngine lpe = new LexicalParsingEngine(lexicalParserModel);
+				glove = new GloVeEngine(true);
+			} else {
+				glove = new GloVeEngine(true);
+			}
+		}
+
+		if (checkWordNet)
+			System.out.println("ToDo");
+
+		if (checkOpenIE)
+			System.out.println("ToDo");
 
 		for (Record record : records) {
-			numberOfRecords++;
-			getRelations(record.getUtterance());
-			// lp.parseSentence(record.getUtterance());
+			System.out.println("Processing utterance: " + record.getUtterance());
+			if (directCheck)
+				printFoundRelations(dse.getRelations(record.getUtterance()), METHOD_TYPE.DIRECT, record.getUtterance());
+
+			if (checkGlove)
+				System.out.println("ToDo");
+			
+			if (checkWordNet)
+				System.out.println("ToDo");
+
+			if (checkOpenIE)
+				System.out.println("ToDo");
 		}
 
-		output.println(numberOfMatches + " of " + numberOfRecords);
+		output.flush();
 		output.close();
-
-		// lp.endOfParsing();
 	}
 
-	private static boolean isDBPediaRelation(String word) {
-		return doe.getLowerDBPediaRelations().contains(word.toLowerCase());
+	private static String isRelationDetected(String relation) {
+		return outputFalseValue;
 	}
 
-	private static boolean isFBCategory(String word) {
-		return fce.getCategories().contains(word);
+	private static void printRow(String utteranceValue, String relationValue, String directValue, String gloveValue,
+			String wordNetValue, String openIEValue, String detectedValue) throws IOException {
+		output.append(utteranceValue);
+		output.append(outputSeparator);
+		output.append(relationValue);
+		output.append(outputSeparator);
+		output.append(directValue);
+		output.append(outputSeparator);
+		output.append(gloveValue);
+		output.append(outputSeparator);
+		output.append(wordNetValue);
+		output.append(outputSeparator);
+		output.append(openIEValue);
+		output.append(outputSeparator);
+		output.append(detectedValue);
+		output.append("\n");
 	}
 
-	private static boolean isInComposedDBPediaRelations(HasWord word, List<HasWord> sentence) {
-		boolean matched = false;
-		String key = new String();
-
-		for (Map.Entry<String, String> entry : doe.getCleanDBPediaTypes().entrySet()) {
-			if (entry.getValue().toLowerCase().equals(word.toString().toLowerCase())) {
-				int wordIndex = sentence.indexOf(word);
-				key = entry.getKey();
-				key = key.substring(0, key.length() - 1);
-				String[] r = doe.splitKey(key);
-				if (word.toString().toLowerCase().equals(r[0].toLowerCase())) {
-					matched = true;
-					for (int i = 1; i < r.length; i++) {
-						if (sentence.size() < r.length + wordIndex) {
-							matched = false;
-							break;
-						} else if (!r[i].toLowerCase().equals(sentence.get(wordIndex + i).toString().toLowerCase())) {
-							matched = false;
-							break;
-						}
-					}
-				}
-				if (matched) {
-					output.println("ComposedDBPedia: " + key);
-					return matched;
-				}
+	private static void printFoundRelations(ArrayList<String> relations, METHOD_TYPE methodType, String utterance)
+			throws IOException {
+		System.out.println("Printing relations...");
+		for (String relation : relations) {
+			switch (methodType) {
+			case DIRECT:
+				printRow(utterance, relation, outputTrueValue, outputFalseValue, outputFalseValue, outputFalseValue,
+						isRelationDetected(relation));
+				break;
+			case GLOVE:
+				printRow(utterance, relation, outputFalseValue, outputTrueValue, outputFalseValue, outputFalseValue,
+						isRelationDetected(relation));
+				break;
+			case WORDNET:
+				printRow(utterance, relation, outputFalseValue, outputFalseValue, outputTrueValue, outputFalseValue,
+						isRelationDetected(relation));
+				break;
+			case OPENIE:
+				printRow(utterance, relation, outputFalseValue, outputFalseValue, outputFalseValue, outputTrueValue,
+						isRelationDetected(relation));
+				break;
 			}
 		}
-		return matched;
-	}
-
-	private static boolean isInComposedFBRelations(HasWord word, List<HasWord> sentence) {
-		boolean matched = false;
-		String key = new String();
-
-		for (Map.Entry<String, String> entry : fce.getCleanFBCategories().entrySet()) {
-			if (entry.getValue().equals(word.toString().toLowerCase())) {
-				int wordIndex = sentence.indexOf(word);
-				key = entry.getKey();
-				key = key.substring(0, key.length() - 1);
-				String[] r = fce.splitKey(key);
-				if (word.toString().toLowerCase().equals(r[0])) {
-					matched = true;
-					for (int i = 1; i < r.length; i++) {
-						if (sentence.size() < r.length + wordIndex) {
-							matched = false;
-							break;
-						} else if (!r[i].equals(sentence.get(wordIndex + i).toString().toLowerCase())) {
-							matched = false;
-							break;
-						}
-					}
-				}
-				if (matched) {
-					output.println("ComposedFreebase: " + key);
-					return matched;
-				}
-			}
-		}
-		return matched;
-	}
-
-	private static boolean isSentenceSimilarToWords(String sentence, GloVeEngine w2v) {
-		boolean matched = false;
-
-		for (String relation : doe.getLowerDBPediaRelations()) {
-			if (w2v.isWordInModel(relation) && w2v.canBeSentenceVectorized(sentence) && w2v.getSimilarity(sentence, relation) > 0.05) {
-					matched = true;
-					output.println("Word2VecSimilarityWith:" + relation);
-			}
-		}
-
-		return matched;
-	}
-	
-	private static boolean areWordsSimilar(String word){
-		boolean matched = false;
-		
-		for (String relation : doe.getLowerDBPediaRelations()){
-			if (glove.isWordInModel(word) && glove.isWordInModel(relation) && glove.getWordsSimilarity(word, relation)>0.28){
-				matched = true;
-				output.println("Word2VecSimilarityWith:"+relation);
-			}
-		}
-		return matched;
-	}
-
-	private static boolean getRelations(String sentence) throws FileNotFoundException, UnsupportedEncodingException {
-
-		Reader reader = new StringReader(sentence);
-		boolean matched = false;
-
-//		if (isSentenceSimilarToWords(sentence, glove)) {
-//			matched = true;
-//			output.println(sentence);
-//		}
-//
-		for (Iterator<List<HasWord>> iterator = new DocumentPreprocessor(reader).iterator(); iterator.hasNext();) {
-			List<HasWord> word = iterator.next();
-			matched = false;
-			int matchedInSentence = 0;
-			for (int i = 0; i < word.size(); i++) {
-				if (isDBPediaRelation(word.get(i).toString())) {
-					output.println("DBPedia: " + word.get(i));
-					output.println(sentence);
-					matched = true;
-					matchedInSentence++;
-				} else if (isFBCategory(word.get(i).toString())) {
-					output.println("Freebase: " + word.get(i));
-					output.println(sentence);
-					matched = true;
-					matchedInSentence++;
-				} else if (isInComposedDBPediaRelations(word.get(i), word)) {
-					output.println(sentence);
-					matched = true;
-					matchedInSentence++;
-				} else if (isInComposedFBRelations(word.get(i), word)) {
-					output.println(sentence);
-					matched = true;
-					matchedInSentence++;
-				} else if (areWordsSimilar(word.get(i).toString().toLowerCase())){
-					output.println(sentence);
-					matched = true;
-					matchedInSentence++;
-				}
-			}
-
-			if (!matched) {
-				output.println();
-				output.println(sentence);
-				output.println();
-			} else {
-				output.println(matchedInSentence);
-				numberOfMatches++;
-			}
-		}
-		
-		return matched;
 	}
 }

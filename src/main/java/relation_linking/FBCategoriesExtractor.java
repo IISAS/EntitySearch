@@ -22,6 +22,8 @@ public class FBCategoriesExtractor {
 
 	public FBCategoriesExtractor() throws IOException, ClassNotFoundException {
 
+		System.out.println("Initializing FBCategories extractor...");
+		
 		File fbStore = new File("FBStore");
 		if (!fbStore.exists() || fbStore.isDirectory()) {
 	        Directory directory = new MMapDirectory(new File("/workspace/erd/index_wikipedia"));

@@ -11,6 +11,8 @@ public class DBPediaOntologyExtractor {
 
 	public DBPediaOntologyExtractor(String filePath) throws FileNotFoundException, IOException, ClassNotFoundException {
 
+		System.out.println("Initializing DBPedia Ontology extractor...");
+		
 		File dbPediaStore = new File("DBPediaStore");
 
 		if (!dbPediaStore.exists() || dbPediaStore.isDirectory()) {
