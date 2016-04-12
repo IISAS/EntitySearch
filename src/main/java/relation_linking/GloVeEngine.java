@@ -12,7 +12,7 @@ public class GloVeEngine {
 
 	private DBPediaOntologyExtractor doe;
 	private FBCategoriesExtractor fce;
-	private LexicalParsingEngine lpe;
+	private LexicalParsingEngine lpe = null;
 
 	private double similarity;
 
@@ -42,8 +42,45 @@ public class GloVeEngine {
 		this.similarity = similarity;
 	}
 
+	private ArrayList<String> getLexicalizedRelations(String sentence) {
+		ArrayList<String> results = new ArrayList<String>();
+		ArrayList<String> pairs = lpe.getPairsFromSentence(sentence);
+
+		for (String pair : pairs) {
+			
+			String relation = isDBPediaRelation(pair);
+			if (relation != null) {
+				results.add(relation);
+				matchedInSentence++;
+			}
+
+			relation = isFBCategory(pair);
+			if (relation != null) {
+				results.add(relation);
+				matchedInSentence++;
+			}
+
+			relation = isInComposedDBPediaRelations(pair);
+			if (relation != null) {
+				results.add(relation);
+				matchedInSentence++;
+			}
+
+			relation = isInComposedFBRelations(pair);
+			if (relation != null) {
+				results.add(relation);
+				matchedInSentence++;
+			}
+		}
+
+		return results;
+	}
+
 	public ArrayList<String> getRelations(String sentence) {
 		System.out.println("Getting glove relations...");
+
+		if (lpe != null)
+			return getLexicalizedRelations(sentence);
 
 		ArrayList<String> results = new ArrayList<String>();
 
@@ -65,25 +102,34 @@ public class GloVeEngine {
 
 				relation = isFBCategory(sWord);
 				if (relation != null) {
-					results.add(sWord);
+					results.add(relation);
 					matchedInSentence++;
 				}
 
 				relation = isInComposedDBPediaRelations(sWord);
 				if (relation != null) {
-					results.add(sWord);
+					results.add(relation);
 					matchedInSentence++;
 				}
-				
-				relation = isInComposedFBRelations(sWord); 
+
+				relation = isInComposedFBRelations(sWord);
 				if (relation != null) {
-					results.add(sWord);
+					results.add(relation);
 					matchedInSentence++;
 				}
 			}
 		}
 
 		return results;
+	}
+
+	private double getSentencesSimilarity(String sentence, String composedRelation) {
+		double similarity = 0;
+		if (canBeSentenceVectorized(sentence) && canBeSentenceVectorized(composedRelation)) {
+			similarity = model.distanceSimilarity(model.sentenceVector(sentence),
+					model.sentenceVector(composedRelation));
+		}
+		return similarity;
 	}
 
 	private double getSimilarity(String sentence, String word) {
@@ -125,7 +171,12 @@ public class GloVeEngine {
 			key = key.substring(0, key.length() - 1);
 			String[] r = Freebase ? fce.splitKey(key) : doe.splitKey(key);
 			String sentence = makeSentenceFromSequence(r);
-			double tSim = getSimilarity(sentence, word);
+			double tSim = 0;
+			if (lpe != null) {
+				tSim = getSentencesSimilarity(sentence, word);
+			} else {
+				tSim = getSimilarity(sentence, word);
+			}
 			if (tSim > similarity && tSim > maxSimilarity) {
 				maxRelation = key;
 				maxSimilarity = tSim;
@@ -149,12 +200,18 @@ public class GloVeEngine {
 
 		for (String relation : relations) {
 
-			if (isWordInModel(word) && isWordInModel(relation)) {
-				double tSim = getWordsSimilarity(word, relation);
-				if (tSim > similarity && tSim > maxSimilarity) {
-					maxRelation = relation;
-					maxSimilarity = tSim;
+			double tSim = 0;
+			if (lpe != null) {
+				tSim = getSimilarity(word, relation);
+			} else {
+				if (isWordInModel(word) && isWordInModel(relation)) {
+					tSim = getWordsSimilarity(word, relation);
 				}
+			}
+
+			if (tSim > similarity && tSim > maxSimilarity) {
+				maxRelation = relation;
+				maxSimilarity = tSim;
 			}
 		}
 		return maxRelation;

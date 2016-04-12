@@ -10,18 +10,19 @@ import edu.stanford.nlp.trees.*;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 
 public class LexicalParsingEngine {
-	
+
 	LexicalizedParser lp;
 
 	public LexicalParsingEngine(String parserModel) throws FileNotFoundException, UnsupportedEncodingException {
-		
+
 		System.out.println("Initializing Lexical Parser...");
 		lp = LexicalizedParser.loadModel(parserModel);
 	}
 
-	public void parseSentence(String text) {
+	private Collection<TypedDependency> parseSentence(String text) {
 		System.out.println("Parsing sentence...");
-		
+
+		Collection<TypedDependency> tdl = null;
 		TreebankLanguagePack tlp = lp.treebankLanguagePack();
 		GrammaticalStructureFactory gsf = null;
 		if (tlp.supportsGrammaticalStructures()) {
@@ -32,16 +33,27 @@ public class LexicalParsingEngine {
 
 		for (List<HasWord> sentence : new DocumentPreprocessor(reader)) {
 			Tree parse = lp.apply(sentence);
-			parse.pennPrint();
-			System.out.println();
 
 			if (gsf != null) {
 				GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
-				Collection<TypedDependency> tdl = gs.typedDependenciesCollapsed();
-				System.out.println(tdl);
+				tdl = gs.allTypedDependencies();
 			}
 		}
+		return tdl;
 	}
-	
 
+	public ArrayList<String> getPairsFromSentence(String sentence) {
+		Collection<TypedDependency> tdl = parseSentence(sentence);
+		ArrayList<String> pairs = new ArrayList<String>();
+
+		for (TypedDependency td : tdl) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(td.gov().originalText());
+			sb.append(" ");
+			sb.append(td.dep().originalText());
+			pairs.add(sb.toString());
+		}
+
+		return pairs;
+	}
 }
