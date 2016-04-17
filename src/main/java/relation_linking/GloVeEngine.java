@@ -18,8 +18,6 @@ public class GloVeEngine {
 
 	private GloVeSpace model;
 
-	private int matchedInSentence;
-
 	public GloVeEngine(String modelPath, double similarity) {
 
 		System.out.println("Initializing Glove search engine...");
@@ -47,29 +45,25 @@ public class GloVeEngine {
 		ArrayList<String> pairs = lpe.getPairsFromSentence(sentence);
 
 		for (String pair : pairs) {
-			
+
 			String relation = isDBPediaRelation(pair);
 			if (relation != null) {
 				results.add(relation);
-				matchedInSentence++;
 			}
 
 			relation = isFBCategory(pair);
 			if (relation != null) {
 				results.add(relation);
-				matchedInSentence++;
 			}
 
 			relation = isInComposedDBPediaRelations(pair);
 			if (relation != null) {
 				results.add(relation);
-				matchedInSentence++;
 			}
 
 			relation = isInComposedFBRelations(pair);
 			if (relation != null) {
 				results.add(relation);
-				matchedInSentence++;
 			}
 		}
 
@@ -89,33 +83,27 @@ public class GloVeEngine {
 		for (Iterator<List<HasWord>> iterator = new DocumentPreprocessor(reader).iterator(); iterator.hasNext();) {
 			List<HasWord> word = iterator.next();
 
-			matchedInSentence = 0;
-
 			for (int i = 0; i < word.size(); i++) {
 				String sWord = word.get(i).toString();
 
 				String relation = isDBPediaRelation(sWord);
 				if (relation != null) {
 					results.add(relation);
-					matchedInSentence++;
 				}
 
 				relation = isFBCategory(sWord);
 				if (relation != null) {
 					results.add(relation);
-					matchedInSentence++;
 				}
 
 				relation = isInComposedDBPediaRelations(sWord);
 				if (relation != null) {
 					results.add(relation);
-					matchedInSentence++;
 				}
 
 				relation = isInComposedFBRelations(sWord);
 				if (relation != null) {
 					results.add(relation);
-					matchedInSentence++;
 				}
 			}
 		}

@@ -11,16 +11,16 @@ public class RelationLinkingEngine {
 		DIRECT, GLOVE, WORDNET, OPENIE;
 	}
 
-	private static boolean directCheck = false;
-	private static boolean checkGlove = false;
+	private static boolean directCheck = true;
+	private static boolean checkGlove = true;
 	private static boolean checkWordNet = false;
 	private static boolean checkOpenIE = true;
 
 	private static boolean withLexicalParser = true;
-	
-	private static double similarity = 0.99;
 
-	private static String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelationDataset.json";
+	private static double similarity = 0.8;
+
+	private static String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
 	private static String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
 	private static String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.300d.txt";
 	private static String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
@@ -80,23 +80,31 @@ public class RelationLinkingEngine {
 		for (Record record : records) {
 			System.out.println("Processing utterance: " + record.getUtterance());
 			if (directCheck)
-				printFoundRelations(dse.getRelations(record.getUtterance()), METHOD_TYPE.DIRECT, record.getUtterance());
+				printFoundRelations(dse.getRelations(record.getUtterance()), METHOD_TYPE.DIRECT, record);
 
 			if (checkGlove)
-				printFoundRelations(glove.getRelations(record.getUtterance()), METHOD_TYPE.GLOVE, record.getUtterance());
-			
+				printFoundRelations(glove.getRelations(record.getUtterance()), METHOD_TYPE.GLOVE, record);
+
 			if (checkWordNet)
 				System.out.println("ToDo");
 
 			if (checkOpenIE)
-				printFoundRelations(openIE.getRelations(record.getUtterance()), METHOD_TYPE.OPENIE, record.getUtterance());
+				printFoundRelations(openIE.getRelations(record.getUtterance()), METHOD_TYPE.OPENIE, record);
 		}
 
 		output.flush();
 		output.close();
 	}
 
-	private static String isRelationDetected(String relation) {
+	private static String isRelationDetected(String relation, Record record) {
+		ArrayList<String> relations = record.getRelations();
+
+		if (relations.contains(relation))
+			return outputTrueValue;
+		for (String rel : relations){
+			if(rel.toLowerCase().compareTo(relation.toLowerCase()) == 0)
+				return outputTrueValue;
+		}
 		return outputFalseValue;
 	}
 
@@ -118,36 +126,36 @@ public class RelationLinkingEngine {
 		output.append("\n");
 	}
 
-	private static void printFoundRelations(ArrayList<String> relations, METHOD_TYPE methodType, String utterance)
+	private static void printFoundRelations(ArrayList<String> relations, METHOD_TYPE methodType, Record record)
 			throws IOException {
 		System.out.println("Printing relations...");
 		for (String relation : relations) {
 			switch (methodType) {
 			case DIRECT:
-				printRow(utterance, relation, outputTrueValue, outputFalseValue, outputFalseValue, outputFalseValue,
-						isRelationDetected(relation));
+				printRow(record.getUtterance(), relation, outputTrueValue, outputFalseValue, outputFalseValue,
+						outputFalseValue, isRelationDetected(relation, record));
 				break;
 			case GLOVE:
-				printRow(utterance, relation, outputFalseValue, outputTrueValue, outputFalseValue, outputFalseValue,
-						isRelationDetected(relation));
+				printRow(record.getUtterance(), relation, outputFalseValue, outputTrueValue, outputFalseValue,
+						outputFalseValue, isRelationDetected(relation, record));
 				break;
 			case WORDNET:
-				printRow(utterance, relation, outputFalseValue, outputFalseValue, outputTrueValue, outputFalseValue,
-						isRelationDetected(relation));
+				printRow(record.getUtterance(), relation, outputFalseValue, outputFalseValue, outputTrueValue,
+						outputFalseValue, isRelationDetected(relation, record));
 				break;
 			case OPENIE:
-				printRow(utterance, relation, outputFalseValue, outputFalseValue, outputFalseValue, outputTrueValue,
-						isRelationDetected(relation));
+				printRow(record.getUtterance(), relation, outputFalseValue, outputFalseValue, outputFalseValue,
+						outputTrueValue, isRelationDetected(relation, record));
 				break;
 			}
 		}
 	}
-	
-	public static DBPediaOntologyExtractor getDBPediaOntologyExtractor(){
+
+	public static DBPediaOntologyExtractor getDBPediaOntologyExtractor() {
 		return doe;
 	}
-	
-	public static FBCategoriesExtractor getFBCategoriesExtractor(){
+
+	public static FBCategoriesExtractor getFBCategoriesExtractor() {
 		return fce;
 	}
 }
