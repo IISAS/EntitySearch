@@ -12,9 +12,9 @@ public class RelationLinkingEngine {
 	}
 
 	private static boolean directCheck = false;
-	private static boolean checkGlove = true;
+	private static boolean checkGlove = false;
 	private static boolean checkWordNet = false;
-	private static boolean checkOpenIE = false;
+	private static boolean checkOpenIE = true;
 
 	private static boolean withLexicalParser = true;
 	
@@ -44,6 +44,7 @@ public class RelationLinkingEngine {
 
 	private static DirectSearchEngine dse;
 	private static GloVeEngine glove;
+	private static OpenIEEngine openIE;
 
 	public static void main(String[] args) throws Exception {
 
@@ -74,7 +75,7 @@ public class RelationLinkingEngine {
 			System.out.println("ToDo");
 
 		if (checkOpenIE)
-			System.out.println("ToDo");
+			openIE = new OpenIEEngine();
 
 		for (Record record : records) {
 			System.out.println("Processing utterance: " + record.getUtterance());
@@ -88,7 +89,7 @@ public class RelationLinkingEngine {
 				System.out.println("ToDo");
 
 			if (checkOpenIE)
-				System.out.println("ToDo");
+				printFoundRelations(openIE.getRelations(record.getUtterance()), METHOD_TYPE.OPENIE, record.getUtterance());
 		}
 
 		output.flush();

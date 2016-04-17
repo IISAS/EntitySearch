@@ -168,7 +168,7 @@
 		<dependency>
 			<groupId>edu.washington.cs.knowitall.openie</groupId>
 			<artifactId>openie_2.10</artifactId>
-			<version>4.1</version>
+			<version>4.2.1</version>
 		</dependency>
 	</dependencies>
 
