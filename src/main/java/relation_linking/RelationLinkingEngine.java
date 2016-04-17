@@ -18,11 +18,11 @@ public class RelationLinkingEngine {
 
 	private static boolean withLexicalParser = true;
 	
-	private static double similarity = 0.9;
+	private static double similarity = 0.99;
 
 	private static String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelationDataset.json";
 	private static String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
-	private static String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.50d.txt";
+	private static String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.300d.txt";
 	private static String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
 	private static String outputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
 
