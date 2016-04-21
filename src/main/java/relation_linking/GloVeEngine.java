@@ -14,11 +14,12 @@ public class GloVeEngine {
 	private FBCategoriesExtractor fce;
 	private LexicalParsingEngine lpe = null;
 
+	private boolean allOverSimilarity;
 	private double similarity;
 
 	private GloVeSpace model;
 
-	public GloVeEngine(String modelPath, double similarity) {
+	public GloVeEngine(String modelPath, double similarity, boolean allOverSimilarity) {
 
 		System.out.println("Initializing Glove search engine...");
 
@@ -27,9 +28,10 @@ public class GloVeEngine {
 		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
 		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
 		this.similarity = similarity;
+		this.allOverSimilarity = allOverSimilarity;
 	}
 
-	public GloVeEngine(String modelPath, double similarity, LexicalParsingEngine lpe) {
+	public GloVeEngine(String modelPath, double similarity, LexicalParsingEngine lpe, boolean allOverSimilarity) {
 		System.out.println("Initializing Glove search engine with lexical parser...");
 
 		model = new GloVeSpace();
@@ -38,6 +40,7 @@ public class GloVeEngine {
 		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
 		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
 		this.similarity = similarity;
+		this.allOverSimilarity = allOverSimilarity;
 	}
 
 	private ArrayList<String> getLexicalizedRelations(String sentence) {
@@ -46,24 +49,24 @@ public class GloVeEngine {
 
 		for (String pair : pairs) {
 
-			String relation = isDBPediaRelation(pair);
-			if (relation != null) {
-				results.add(relation);
+			ArrayList<String> relations = isDBPediaRelation(pair);
+			if (relations != null) {
+				results.addAll(relations);
 			}
 
-			relation = isFBCategory(pair);
-			if (relation != null) {
-				results.add(relation);
+			relations = isFBCategory(pair);
+			if (relations != null) {
+				results.addAll(relations);
 			}
 
-			relation = isInComposedDBPediaRelations(pair);
-			if (relation != null) {
-				results.add(relation);
+			relations = isInComposedDBPediaRelations(pair);
+			if (relations != null) {
+				results.addAll(relations);
 			}
 
-			relation = isInComposedFBRelations(pair);
-			if (relation != null) {
-				results.add(relation);
+			relations = isInComposedFBRelations(pair);
+			if (relations != null) {
+				results.addAll(relations);
 			}
 		}
 
@@ -86,24 +89,24 @@ public class GloVeEngine {
 			for (int i = 0; i < word.size(); i++) {
 				String sWord = word.get(i).toString();
 
-				String relation = isDBPediaRelation(sWord);
-				if (relation != null) {
-					results.add(relation);
+				ArrayList<String> relations = isDBPediaRelation(sWord);
+				if (relations != null) {
+					results.addAll(relations);
 				}
 
-				relation = isFBCategory(sWord);
-				if (relation != null) {
-					results.add(relation);
+				relations = isFBCategory(sWord);
+				if (relations != null) {
+					results.addAll(relations);
 				}
 
-				relation = isInComposedDBPediaRelations(sWord);
-				if (relation != null) {
-					results.add(relation);
+				relations = isInComposedDBPediaRelations(sWord);
+				if (relations != null) {
+					results.addAll(relations);
 				}
 
-				relation = isInComposedFBRelations(sWord);
-				if (relation != null) {
-					results.add(relation);
+				relations = isInComposedFBRelations(sWord);
+				if (relations != null) {
+					results.addAll(relations);
 				}
 			}
 		}
@@ -149,10 +152,11 @@ public class GloVeEngine {
 		return sentence.toString();
 	}
 
-	private String findComposedRelation(String word, boolean Freebase, Map<String, String> cleanTypes) {
+	private ArrayList<String> findComposedRelation(String word, boolean Freebase, Map<String, String> cleanTypes) {
 		double maxSimilarity = 0;
 		String maxRelation = null;
 		String key;
+		ArrayList<String> foundRelations = new ArrayList<String>();
 
 		for (Map.Entry<String, String> entry : cleanTypes.entrySet()) {
 			key = entry.getKey();
@@ -165,26 +169,35 @@ public class GloVeEngine {
 			} else {
 				tSim = getSimilarity(sentence, word);
 			}
-			if (tSim > similarity && tSim > maxSimilarity) {
-				maxRelation = key;
-				maxSimilarity = tSim;
+			if (tSim > similarity) {
+				if (allOverSimilarity) {
+					foundRelations.add(key);
+				} else if (tSim > maxSimilarity) {
+					maxRelation = key;
+					maxSimilarity = tSim;
+				}
 			}
 
 		}
-		return maxRelation;
+
+		if (!allOverSimilarity)
+			foundRelations.add(maxRelation);
+
+		return foundRelations;
 	}
 
-	private String isInComposedDBPediaRelations(String word) {
+	private ArrayList<String> isInComposedDBPediaRelations(String word) {
 		return findComposedRelation(word, false, doe.getCleanDBPediaTypes());
 	}
 
-	private String isInComposedFBRelations(String word) {
+	private ArrayList<String> isInComposedFBRelations(String word) {
 		return findComposedRelation(word, true, fce.getCleanFBCategories());
 	}
 
-	private String findRelation(String word, ArrayList<String> relations) {
+	private ArrayList<String> findRelation(String word, ArrayList<String> relations) {
 		double maxSimilarity = 0;
 		String maxRelation = null;
+		ArrayList<String> foundResults = new ArrayList<String>();
 
 		for (String relation : relations) {
 
@@ -197,19 +210,28 @@ public class GloVeEngine {
 				}
 			}
 
-			if (tSim > similarity && tSim > maxSimilarity) {
-				maxRelation = relation;
-				maxSimilarity = tSim;
+			if (tSim > similarity) {
+
+				if (allOverSimilarity) {
+					foundResults.add(relation);
+				} else if (tSim > maxSimilarity) {
+					maxRelation = relation;
+					maxSimilarity = tSim;
+				}
 			}
 		}
-		return maxRelation;
+
+		if (!allOverSimilarity)
+			foundResults.add(maxRelation);
+
+		return foundResults;
 	}
 
-	private String isDBPediaRelation(String word) {
+	private ArrayList<String> isDBPediaRelation(String word) {
 		return findRelation(word, doe.getLowerDBPediaRelations());
 	}
 
-	private String isFBCategory(String word) {
+	private ArrayList<String> isFBCategory(String word) {
 		return findRelation(word, fce.getCategories());
 	}
 }

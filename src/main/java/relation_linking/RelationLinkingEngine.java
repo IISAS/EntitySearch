@@ -17,8 +17,9 @@ public class RelationLinkingEngine {
 	private static boolean checkOpenIE = true;
 
 	private static boolean withLexicalParser = true;
+	private static boolean allOverSimilarity = true;
 
-	private static double similarity = 0.8;
+	private static double similarity = 0.5;
 
 	private static String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
 	private static String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
@@ -45,6 +46,7 @@ public class RelationLinkingEngine {
 	private static DirectSearchEngine dse;
 	private static GloVeEngine glove;
 	private static OpenIEEngine openIE;
+	private static WordNetEngine wordnet;
 
 	public static void main(String[] args) throws Exception {
 
@@ -65,14 +67,14 @@ public class RelationLinkingEngine {
 		if (checkGlove) {
 			if (withLexicalParser) {
 				LexicalParsingEngine lpe = new LexicalParsingEngine(lexicalParserModel);
-				glove = new GloVeEngine(gloveModelPath, similarity, lpe);
+				glove = new GloVeEngine(gloveModelPath, similarity, lpe, allOverSimilarity);
 			} else {
-				glove = new GloVeEngine(gloveModelPath, similarity);
+				glove = new GloVeEngine(gloveModelPath, similarity, allOverSimilarity);
 			}
 		}
 
 		if (checkWordNet)
-			System.out.println("ToDo");
+			wordnet = new WordNetEngine("/usr/local/WordNet-3.0");
 
 		if (checkOpenIE)
 			openIE = new OpenIEEngine();
