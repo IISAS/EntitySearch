@@ -7,7 +7,7 @@ import DP_entity_linking.dataset.*;
 
 public class RelationLinkingEngine {
 
-	private enum METHOD_TYPE {
+	public enum METHOD_TYPE {
 		DIRECT, GLOVE, WORDNET, OPENIE;
 	}
 
@@ -30,6 +30,8 @@ public class RelationLinkingEngine {
 	private static String outputUtteranceKey = "utterance";
 	private static String outputRelationKey = "relation";
 	private static String outputDetectedKey = "detected";
+	private static String outputFoundRelationsKey = "number of found";
+	private static String outputDetectedRelationsKey = "number of detected";
 	private static String outputSeparator = ";";
 	private static String outputDirectKey = "Direct";
 	private static String outputGloveKey = "GloVe";
@@ -56,7 +58,7 @@ public class RelationLinkingEngine {
 
 		output = new FileWriter(outputPath);
 		printRow(outputUtteranceKey, outputRelationKey, outputDirectKey, outputGloveKey, outputWordNetKey,
-				outputOpenIEKey, outputDetectedKey);
+				outputOpenIEKey, outputDetectedKey, outputFoundRelationsKey, outputDetectedRelationsKey);
 
 		doe = new DBPediaOntologyExtractor(dbPediaOntologyPath);
 		fce = new FBCategoriesExtractor();
@@ -81,6 +83,9 @@ public class RelationLinkingEngine {
 
 		for (Record record : records) {
 			System.out.println("Processing utterance: " + record.getUtterance());
+			
+			
+			
 			if (directCheck)
 				printFoundRelations(dse.getRelations(record.getUtterance()), METHOD_TYPE.DIRECT, record);
 
@@ -111,7 +116,7 @@ public class RelationLinkingEngine {
 	}
 
 	private static void printRow(String utteranceValue, String relationValue, String directValue, String gloveValue,
-			String wordNetValue, String openIEValue, String detectedValue) throws IOException {
+			String wordNetValue, String openIEValue, String detectedValue, String foundValue, String detectedNumberValue) throws IOException {
 		output.append(utteranceValue);
 		output.append(outputSeparator);
 		output.append(relationValue);
@@ -125,6 +130,10 @@ public class RelationLinkingEngine {
 		output.append(openIEValue);
 		output.append(outputSeparator);
 		output.append(detectedValue);
+		output.append(outputSeparator);
+		output.append(foundValue);
+		output.append(outputSeparator);
+		output.append(detectedNumberValue);
 		output.append("\n");
 	}
 
@@ -135,19 +144,19 @@ public class RelationLinkingEngine {
 			switch (methodType) {
 			case DIRECT:
 				printRow(record.getUtterance(), relation, outputTrueValue, outputFalseValue, outputFalseValue,
-						outputFalseValue, isRelationDetected(relation, record));
+						outputFalseValue, isRelationDetected(relation, record), "0", "0");
 				break;
 			case GLOVE:
 				printRow(record.getUtterance(), relation, outputFalseValue, outputTrueValue, outputFalseValue,
-						outputFalseValue, isRelationDetected(relation, record));
+						outputFalseValue, isRelationDetected(relation, record), "0", "0");
 				break;
 			case WORDNET:
 				printRow(record.getUtterance(), relation, outputFalseValue, outputFalseValue, outputTrueValue,
-						outputFalseValue, isRelationDetected(relation, record));
+						outputFalseValue, isRelationDetected(relation, record), "0", "0");
 				break;
 			case OPENIE:
 				printRow(record.getUtterance(), relation, outputFalseValue, outputFalseValue, outputFalseValue,
-						outputTrueValue, isRelationDetected(relation, record));
+						outputTrueValue, isRelationDetected(relation, record), "0", "0");
 				break;
 			}
 		}
