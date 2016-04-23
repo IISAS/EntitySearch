@@ -4,19 +4,14 @@ import relation_linking.RelationLinkingEngine.METHOD_TYPE;
 
 public class Result {
 
-	private String relation;
+	private String name;
 	private boolean directSearch = false;
 	private boolean glove = false;
 	private boolean wordnet = false;
 	private boolean openie = false;
 	private boolean detected = false;
-	private int number = 0;
-	private int numberOfFound = 0;
-	private int numberOfDetected = 0;
 
-	public Result(String relation, METHOD_TYPE methodType, int number) {
-		this.relation = relation;
-		this.number = number;
+	public Result(String name, METHOD_TYPE methodType) {
 		switch (methodType) {
 		case DIRECT:
 			directSearch = true;
@@ -33,14 +28,8 @@ public class Result {
 		default:
 			break;
 		}
-	}
-
-	public String getRelation() {
-		return relation;
-	}
-
-	public void setRelation(String relation) {
-		this.relation = relation;
+		
+		this.setName(name);
 	}
 
 	public boolean isDirectSearch() {
@@ -83,28 +72,12 @@ public class Result {
 		this.detected = detected;
 	}
 
-	public int getNumber() {
-		return number;
+	public String getName() {
+		return name;
 	}
 
-	public void setNumber(int number) {
-		this.number = number;
-	}
-
-	public int getNumberOfFound() {
-		return numberOfFound;
-	}
-
-	public void setNumberOfFound(int numberOfFound) {
-		this.numberOfFound = numberOfFound;
-	}
-
-	public int getNumberOfDetected() {
-		return numberOfDetected;
-	}
-
-	public void setNumberOfDetected(int numberOfDetected) {
-		this.numberOfDetected = numberOfDetected;
+	public void setName(String name) {
+		this.name = name;
 	}
 
 }

@@ -2,6 +2,7 @@ package relation_linking;
 
 import java.io.*;
 import java.util.*;
+import java.util.Map.Entry;
 
 import DP_entity_linking.dataset.*;
 
@@ -11,54 +12,63 @@ public class RelationLinkingEngine {
 		DIRECT, GLOVE, WORDNET, OPENIE;
 	}
 
-	private static boolean directCheck = true;
-	private static boolean checkGlove = true;
-	private static boolean checkWordNet = false;
-	private static boolean checkOpenIE = true;
+	private boolean directCheck = true;
+	private boolean checkGlove = true;
+	private boolean checkWordNet = false;
+	private boolean checkOpenIE = true;
 
-	private static boolean withLexicalParser = true;
-	private static boolean allOverSimilarity = true;
+	private boolean withLexicalParser = true;
+	private boolean allOverSimilarity = true;
 
-	private static double similarity = 0.5;
+	private double similarity = 0.5;
 
-	private static String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
-	private static String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
-	private static String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.300d.txt";
-	private static String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
-	private static String outputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
+	private String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
+	private String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
+	private String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.300d.txt";
+	private String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
+	private String outputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
 
-	private static String outputUtteranceKey = "utterance";
-	private static String outputRelationKey = "relation";
-	private static String outputDetectedKey = "detected";
-	private static String outputFoundRelationsKey = "number of found";
-	private static String outputDetectedRelationsKey = "number of detected";
-	private static String outputSeparator = ";";
-	private static String outputDirectKey = "Direct";
-	private static String outputGloveKey = "GloVe";
-	private static String outputWordNetKey = "WordNet";
-	private static String outputOpenIEKey = "OpenIE";
-	private static String outputTrueValue = "1";
-	private static String outputFalseValue = "0";
+	private String outputUtteranceKey = "utterance";
+	private String outputRelationKey = "relation";
+	private String outputDetectedKey = "detected";
+	private String outputFoundRelationsKey = "number of found";
+	private String outputDetectedRelationsKey = "number of detected";
+	private String outputSeparator = ";";
+	private String outputDirectKey = "Direct";
+	private String outputGloveKey = "GloVe";
+	private String outputWordNetKey = "WordNet";
+	private String outputOpenIEKey = "OpenIE";
+	private String outputTrueValue = "1";
+	private String outputFalseValue = "0";
+	private String outputNotFoundValue = "NAN";
 
 	private static DBPediaOntologyExtractor doe;
 	private static FBCategoriesExtractor fce;
 
-	private static FileWriter output;
+	private FileWriter output;
 
-	private static DirectSearchEngine dse;
-	private static GloVeEngine glove;
-	private static OpenIEEngine openIE;
-	private static WordNetEngine wordnet;
+	private DirectSearchEngine dse;
+	private GloVeEngine glove;
+	private OpenIEEngine openIE;
+	private WordNetEngine wordnet;
 
-	public static void main(String[] args) throws Exception {
+	public RelationLinkingEngine() {
+	}
 
+	public static void main(String[] args) throws ClassNotFoundException, IOException {
+
+		RelationLinkingEngine rle = new RelationLinkingEngine();
+		rle.runDetection();
+	}
+
+	private void runDetection() throws IOException, ClassNotFoundException {
 		System.out.println("Reading dataset...");
 		DataSet dataset = new DataSet(datasetPath);
 		List<Record> records = dataset.loadWebquestions();
 
 		output = new FileWriter(outputPath);
 		printRow(outputUtteranceKey, outputRelationKey, outputDirectKey, outputGloveKey, outputWordNetKey,
-				outputOpenIEKey, outputDetectedKey, outputFoundRelationsKey, outputDetectedRelationsKey);
+				outputOpenIEKey, outputDetectedKey, outputDetectedRelationsKey, outputFoundRelationsKey);
 
 		doe = new DBPediaOntologyExtractor(dbPediaOntologyPath);
 		fce = new FBCategoriesExtractor();
@@ -83,40 +93,35 @@ public class RelationLinkingEngine {
 
 		for (Record record : records) {
 			System.out.println("Processing utterance: " + record.getUtterance());
-			
-			
-			
+
+			Map<String, Result> results = new HashMap<String, Result>();
+
 			if (directCheck)
-				printFoundRelations(dse.getRelations(record.getUtterance()), METHOD_TYPE.DIRECT, record);
+				results = addFoundRelations(dse.getRelations(record.getUtterance()), results, METHOD_TYPE.DIRECT,
+						record);
 
 			if (checkGlove)
-				printFoundRelations(glove.getRelations(record.getUtterance()), METHOD_TYPE.GLOVE, record);
+				results = addFoundRelations(glove.getRelations(record.getUtterance()), results, METHOD_TYPE.GLOVE,
+						record);
 
 			if (checkWordNet)
 				System.out.println("ToDo");
 
 			if (checkOpenIE)
-				printFoundRelations(openIE.getRelations(record.getUtterance()), METHOD_TYPE.OPENIE, record);
+				results = addFoundRelations(openIE.getRelations(record.getUtterance()), results, METHOD_TYPE.OPENIE,
+						record);
+
+			printFoundRelations(results, record.getUtterance());
+
 		}
 
 		output.flush();
 		output.close();
 	}
 
-	private static String isRelationDetected(String relation, Record record) {
-		ArrayList<String> relations = record.getRelations();
-
-		if (relations.contains(relation))
-			return outputTrueValue;
-		for (String rel : relations){
-			if(rel.toLowerCase().compareTo(relation.toLowerCase()) == 0)
-				return outputTrueValue;
-		}
-		return outputFalseValue;
-	}
-
-	private static void printRow(String utteranceValue, String relationValue, String directValue, String gloveValue,
-			String wordNetValue, String openIEValue, String detectedValue, String foundValue, String detectedNumberValue) throws IOException {
+	private void printRow(String utteranceValue, String relationValue, String directValue, String gloveValue,
+			String wordNetValue, String openIEValue, String detectedValue, String foundValue,
+			String detectedNumberValue) throws IOException {
 		output.append(utteranceValue);
 		output.append(outputSeparator);
 		output.append(relationValue);
@@ -137,29 +142,83 @@ public class RelationLinkingEngine {
 		output.append("\n");
 	}
 
-	private static void printFoundRelations(ArrayList<String> relations, METHOD_TYPE methodType, Record record)
-			throws IOException {
-		System.out.println("Printing relations...");
-		for (String relation : relations) {
-			switch (methodType) {
-			case DIRECT:
-				printRow(record.getUtterance(), relation, outputTrueValue, outputFalseValue, outputFalseValue,
-						outputFalseValue, isRelationDetected(relation, record), "0", "0");
-				break;
-			case GLOVE:
-				printRow(record.getUtterance(), relation, outputFalseValue, outputTrueValue, outputFalseValue,
-						outputFalseValue, isRelationDetected(relation, record), "0", "0");
-				break;
-			case WORDNET:
-				printRow(record.getUtterance(), relation, outputFalseValue, outputFalseValue, outputTrueValue,
-						outputFalseValue, isRelationDetected(relation, record), "0", "0");
-				break;
-			case OPENIE:
-				printRow(record.getUtterance(), relation, outputFalseValue, outputFalseValue, outputFalseValue,
-						outputTrueValue, isRelationDetected(relation, record), "0", "0");
-				break;
+	private int getNumberOfDetected(Map<String, Result> results) {
+		int detected = 0;
+		for (Entry<String, Result> result : results.entrySet()) {
+			if (result.getValue().isDetected()) {
+				detected++;
 			}
 		}
+		return detected;
+	}
+
+	private String valueForBool(boolean bool) {
+		return bool ? outputTrueValue : outputFalseValue;
+	}
+
+	private void printFoundRelations(Map<String, Result> results, String utterance) throws IOException {
+		System.out.println("Printing relations...");
+
+		int numberOfDetected = getNumberOfDetected(results);
+		int numberOfFound = results.size();
+
+		if (results.isEmpty()) {
+			printRow(utterance, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue,
+					outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, String.valueOf(numberOfDetected),
+					String.valueOf(numberOfFound));
+		} else {
+			for (Entry<String, Result> relation : results.entrySet()) {
+				Result result = relation.getValue();
+				printRow(utterance, result.getName(), valueForBool(result.isDirectSearch()),
+						valueForBool(result.isGlove()), valueForBool(result.isWordNet()),
+						valueForBool(result.isOpenie()), valueForBool(result.isDetected()),
+						String.valueOf(numberOfDetected), String.valueOf(numberOfFound));
+			}
+		}
+	}
+
+	private boolean isRelationDetected(String relation, Record record) {
+		ArrayList<String> relations = record.getRelations();
+
+		for (String rel : relations) {
+			if (rel.toLowerCase().compareTo(relation.toLowerCase()) == 0)
+				return true;
+		}
+		return false;
+	}
+
+	private Map<String, Result> addFoundRelations(ArrayList<String> relations, Map<String, Result> results,
+			METHOD_TYPE methodType, Record record) {
+
+		Result result;
+
+		for (String relation : relations) {
+			if (results.containsKey(relation.toLowerCase())) {
+				result = results.get(relation.toLowerCase());
+				switch (methodType) {
+				case DIRECT:
+					result.setDirectSearch(true);
+					break;
+				case GLOVE:
+					result.setGlove(true);
+					break;
+				case WORDNET:
+					result.setWordNet(true);
+					break;
+				case OPENIE:
+					result.setOpenie(true);
+					break;
+				}
+			} else {
+				result = new Result(relation, methodType);
+				results.put(relation.toLowerCase(), result);
+			}
+
+			result.setDetected(isRelationDetected(relation, record));
+			results.replace(relation.toLowerCase(), result);
+		}
+
+		return results;
 	}
 
 	public static DBPediaOntologyExtractor getDBPediaOntologyExtractor() {
