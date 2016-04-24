@@ -18,8 +18,8 @@ public class RelationLinkingEngine {
 	private boolean checkWordNet = true;
 
 	private boolean withOpenIE = false;
-	private boolean withLexicalParser = true;
-	private boolean allOverSimilarity = true;
+	private boolean withLexicalParser = false;
+	private boolean allOverSimilarity = false;
 
 	private double similarity = 0.5;
 
