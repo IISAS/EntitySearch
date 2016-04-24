@@ -11,17 +11,42 @@ import net.didion.jwnl.dictionary.Dictionary;
 public class WordNetEngine {
 
 	Dictionary wordnet;
-	Map<String, ArrayList<String>> DBPediaSynsets;
-	Map<String, ArrayList<String>> FreebaseSynsets;
+	private Map<String, ArrayList<String>> DBPediaSynsets;
+	private Map<String, ArrayList<String>> FreebaseSynsets;
+	private LexicalParsingEngine lpe = null;
+	private OpenIEEngine openIE = null;
 
 	public WordNetEngine(String path) throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine...");
-		
+
 		JWNL.initialize(new FileInputStream(path));
 		wordnet = Dictionary.getInstance();
 
 		DBPediaSynsets = getSynsetsForDBPedia();
 		FreebaseSynsets = getSynsetsForFreebase();
+	}
+
+	public WordNetEngine(String path, LexicalParsingEngine lpe)
+			throws JWNLException, ClassNotFoundException, IOException {
+		System.out.println("Initializing WordNet Search engine with lexical parser...");
+
+		JWNL.initialize(new FileInputStream(path));
+		wordnet = Dictionary.getInstance();
+
+		DBPediaSynsets = getSynsetsForDBPedia();
+		FreebaseSynsets = getSynsetsForFreebase();
+		this.lpe = lpe;
+	}
+
+	public WordNetEngine(String path, OpenIEEngine openIE) throws JWNLException, ClassNotFoundException, IOException {
+		System.out.println("Initializing WordNet Search engine with OpenIE...");
+
+		JWNL.initialize(new FileInputStream(path));
+		wordnet = Dictionary.getInstance();
+
+		DBPediaSynsets = getSynsetsForDBPedia();
+		FreebaseSynsets = getSynsetsForFreebase();
+		this.openIE = openIE;
 	}
 
 	private ArrayList<String> getSynsetsFromWord(String relation) throws JWNLException {

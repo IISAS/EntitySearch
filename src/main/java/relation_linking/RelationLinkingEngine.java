@@ -86,13 +86,22 @@ public class RelationLinkingEngine {
 		if (checkGlove) {
 			if (withLexicalParser) {
 				glove = new GloVeEngine(gloveModelPath, similarity, lpe, allOverSimilarity);
+			} else if (withOpenIE) {
+				glove = new GloVeEngine(gloveModelPath, similarity, openIE, allOverSimilarity);
 			} else {
 				glove = new GloVeEngine(gloveModelPath, similarity, allOverSimilarity);
 			}
 		}
 
-		if (checkWordNet)
-			wordnet = new WordNetEngine(JWNLPropertiesPath);
+		if (checkWordNet) {
+			if (withLexicalParser) {
+				wordnet = new WordNetEngine(JWNLPropertiesPath, lpe);
+			} else if (withOpenIE) {
+				wordnet = new WordNetEngine(JWNLPropertiesPath, openIE);
+			} else {
+				wordnet = new WordNetEngine(JWNLPropertiesPath);
+			}
+		}
 
 		for (Record record : records) {
 			System.out.println("Processing utterance: " + record.getUtterance());
