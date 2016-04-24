@@ -8,7 +8,6 @@ public class Result {
 	private boolean directSearch = false;
 	private boolean glove = false;
 	private boolean wordnet = false;
-	private boolean openie = false;
 	private boolean detected = false;
 
 	public Result(String name, METHOD_TYPE methodType) {
@@ -21,9 +20,6 @@ public class Result {
 			break;
 		case WORDNET:
 			wordnet = true;
-			break;
-		case OPENIE:
-			openie = true;
 			break;
 		default:
 			break;
@@ -54,14 +50,6 @@ public class Result {
 
 	public void setWordNet(boolean wordnet) {
 		this.wordnet = wordnet;
-	}
-
-	public boolean isOpenie() {
-		return openie;
-	}
-
-	public void setOpenie(boolean openie) {
-		this.openie = openie;
 	}
 
 	public boolean isDetected() {

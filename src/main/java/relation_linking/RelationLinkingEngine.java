@@ -5,18 +5,19 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import DP_entity_linking.dataset.*;
+import net.didion.jwnl.JWNLException;
 
 public class RelationLinkingEngine {
 
 	public enum METHOD_TYPE {
-		DIRECT, GLOVE, WORDNET, OPENIE;
+		DIRECT, GLOVE, WORDNET;
 	}
 
-	private boolean directCheck = true;
-	private boolean checkGlove = true;
-	private boolean checkWordNet = false;
-	private boolean checkOpenIE = true;
+	private boolean directCheck = false;
+	private boolean checkGlove = false;
+	private boolean checkWordNet = true;
 
+	private boolean withOpenIE = false;
 	private boolean withLexicalParser = true;
 	private boolean allOverSimilarity = true;
 
@@ -27,6 +28,7 @@ public class RelationLinkingEngine {
 	private String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.300d.txt";
 	private String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
 	private String outputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
+	private String JWNLPropertiesPath = "file_properties.xml";
 
 	private String outputUtteranceKey = "utterance";
 	private String outputRelationKey = "relation";
@@ -37,7 +39,6 @@ public class RelationLinkingEngine {
 	private String outputDirectKey = "Direct";
 	private String outputGloveKey = "GloVe";
 	private String outputWordNetKey = "WordNet";
-	private String outputOpenIEKey = "OpenIE";
 	private String outputTrueValue = "1";
 	private String outputFalseValue = "0";
 	private String outputNotFoundValue = "NAN";
@@ -49,36 +50,41 @@ public class RelationLinkingEngine {
 
 	private DirectSearchEngine dse;
 	private GloVeEngine glove;
-	private OpenIEEngine openIE;
 	private WordNetEngine wordnet;
 
 	public RelationLinkingEngine() {
 	}
 
-	public static void main(String[] args) throws ClassNotFoundException, IOException {
+	public static void main(String[] args) throws ClassNotFoundException, IOException, JWNLException {
 
 		RelationLinkingEngine rle = new RelationLinkingEngine();
 		rle.runDetection();
 	}
 
-	private void runDetection() throws IOException, ClassNotFoundException {
+	private void runDetection() throws IOException, ClassNotFoundException, JWNLException {
 		System.out.println("Reading dataset...");
 		DataSet dataset = new DataSet(datasetPath);
 		List<Record> records = dataset.loadWebquestions();
 
 		output = new FileWriter(outputPath);
 		printRow(outputUtteranceKey, outputRelationKey, outputDirectKey, outputGloveKey, outputWordNetKey,
-				outputOpenIEKey, outputDetectedKey, outputDetectedRelationsKey, outputFoundRelationsKey);
+				outputDetectedKey, outputDetectedRelationsKey, outputFoundRelationsKey);
 
 		doe = new DBPediaOntologyExtractor(dbPediaOntologyPath);
 		fce = new FBCategoriesExtractor();
+
+		LexicalParsingEngine lpe = null;
+		OpenIEEngine openIE = null;
+		if (withLexicalParser)
+			lpe = new LexicalParsingEngine(lexicalParserModel);
+		if (withOpenIE)
+			openIE = new OpenIEEngine();
 
 		if (directCheck)
 			dse = new DirectSearchEngine();
 
 		if (checkGlove) {
 			if (withLexicalParser) {
-				LexicalParsingEngine lpe = new LexicalParsingEngine(lexicalParserModel);
 				glove = new GloVeEngine(gloveModelPath, similarity, lpe, allOverSimilarity);
 			} else {
 				glove = new GloVeEngine(gloveModelPath, similarity, allOverSimilarity);
@@ -86,10 +92,7 @@ public class RelationLinkingEngine {
 		}
 
 		if (checkWordNet)
-			wordnet = new WordNetEngine("/usr/local/WordNet-3.0");
-
-		if (checkOpenIE)
-			openIE = new OpenIEEngine();
+			wordnet = new WordNetEngine(JWNLPropertiesPath);
 
 		for (Record record : records) {
 			System.out.println("Processing utterance: " + record.getUtterance());
@@ -105,10 +108,7 @@ public class RelationLinkingEngine {
 						record);
 
 			if (checkWordNet)
-				System.out.println("ToDo");
-
-			if (checkOpenIE)
-				results = addFoundRelations(openIE.getRelations(record.getUtterance()), results, METHOD_TYPE.OPENIE,
+				results = addFoundRelations(wordnet.getRelations(record.getUtterance()), results, METHOD_TYPE.WORDNET,
 						record);
 
 			printFoundRelations(results, record.getUtterance());
@@ -120,8 +120,8 @@ public class RelationLinkingEngine {
 	}
 
 	private void printRow(String utteranceValue, String relationValue, String directValue, String gloveValue,
-			String wordNetValue, String openIEValue, String detectedValue, String foundValue,
-			String detectedNumberValue) throws IOException {
+			String wordNetValue, String detectedValue, String foundValue, String detectedNumberValue)
+			throws IOException {
 		output.append(utteranceValue);
 		output.append(outputSeparator);
 		output.append(relationValue);
@@ -131,8 +131,6 @@ public class RelationLinkingEngine {
 		output.append(gloveValue);
 		output.append(outputSeparator);
 		output.append(wordNetValue);
-		output.append(outputSeparator);
-		output.append(openIEValue);
 		output.append(outputSeparator);
 		output.append(detectedValue);
 		output.append(outputSeparator);
@@ -163,16 +161,15 @@ public class RelationLinkingEngine {
 		int numberOfFound = results.size();
 
 		if (results.isEmpty()) {
-			printRow(utterance, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue,
-					outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, String.valueOf(numberOfDetected),
-					String.valueOf(numberOfFound));
+			printRow(utterance, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue,
+					outputNotFoundValue, String.valueOf(numberOfDetected), String.valueOf(numberOfFound));
 		} else {
 			for (Entry<String, Result> relation : results.entrySet()) {
 				Result result = relation.getValue();
 				printRow(utterance, result.getName(), valueForBool(result.isDirectSearch()),
 						valueForBool(result.isGlove()), valueForBool(result.isWordNet()),
-						valueForBool(result.isOpenie()), valueForBool(result.isDetected()),
-						String.valueOf(numberOfDetected), String.valueOf(numberOfFound));
+						valueForBool(result.isDetected()), String.valueOf(numberOfDetected),
+						String.valueOf(numberOfFound));
 			}
 		}
 	}
@@ -204,9 +201,6 @@ public class RelationLinkingEngine {
 					break;
 				case WORDNET:
 					result.setWordNet(true);
-					break;
-				case OPENIE:
-					result.setOpenie(true);
 					break;
 				}
 			} else {

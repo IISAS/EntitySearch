@@ -13,6 +13,7 @@ public class GloVeEngine {
 	private DBPediaOntologyExtractor doe;
 	private FBCategoriesExtractor fce;
 	private LexicalParsingEngine lpe = null;
+	private OpenIEEngine openIE = null;
 
 	private boolean allOverSimilarity;
 	private double similarity;
@@ -43,28 +44,39 @@ public class GloVeEngine {
 		this.allOverSimilarity = allOverSimilarity;
 	}
 
-	private ArrayList<String> getLexicalizedRelations(String sentence) {
+	public GloVeEngine(String modelPath, double similarity, OpenIEEngine openIE, boolean allOverSimilarity) {
+		System.out.println("Initializing Glove search engine with OpenIE...");
+
+		model = new GloVeSpace();
+		model = GloVeSpace.load(modelPath, false, false);
+		this.openIE = openIE;
+		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
+		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
+		this.similarity = similarity;
+		this.allOverSimilarity = allOverSimilarity;
+	}
+
+	private ArrayList<String> getComposedRelations(ArrayList<String> sentenceParts) {
 		ArrayList<String> results = new ArrayList<String>();
-		ArrayList<String> pairs = lpe.getPairsFromSentence(sentence);
 
-		for (String pair : pairs) {
+		for (String sentencePart : sentenceParts) {
 
-			ArrayList<String> relations = isDBPediaRelation(pair);
+			ArrayList<String> relations = isDBPediaRelation(sentencePart);
 			if (relations != null) {
 				results.addAll(relations);
 			}
 
-			relations = isFBCategory(pair);
+			relations = isFBCategory(sentencePart);
 			if (relations != null) {
 				results.addAll(relations);
 			}
 
-			relations = isInComposedDBPediaRelations(pair);
+			relations = isInComposedDBPediaRelations(sentencePart);
 			if (relations != null) {
 				results.addAll(relations);
 			}
 
-			relations = isInComposedFBRelations(pair);
+			relations = isInComposedFBRelations(sentencePart);
 			if (relations != null) {
 				results.addAll(relations);
 			}
@@ -73,11 +85,22 @@ public class GloVeEngine {
 		return results;
 	}
 
+	private ArrayList<String> getOpenIERelations(String sentence) {
+		return getComposedRelations(openIE.getRelations(sentence));
+	}
+
+	private ArrayList<String> getLexicalizedRelations(String sentence) {
+		return getComposedRelations(lpe.getPairsFromSentence(sentence));
+	}
+
 	public ArrayList<String> getRelations(String sentence) {
 		System.out.println("Getting glove relations...");
 
 		if (lpe != null)
 			return getLexicalizedRelations(sentence);
+
+		if (openIE != null)
+			return getOpenIERelations(sentence);
 
 		ArrayList<String> results = new ArrayList<String>();
 

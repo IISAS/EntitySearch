@@ -82,8 +82,4 @@ public class DBPediaOntologyExtractor {
 		return this.listOfCleanRelations;
 	}
 
-	public void closeDBPediaOntologyExtractor() {
-		listOfRelations = null;
-	}
-
 }
