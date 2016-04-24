@@ -9,6 +9,7 @@ public class DBPediaOntologyExtractor {
 	private Map<String, String> listOfCleanRelations = new HashMap<String, String>();
 	private ArrayList<String> lowerCaseListOfRelations = new ArrayList<String>();
 
+	@SuppressWarnings("unchecked")
 	public DBPediaOntologyExtractor(String filePath) throws FileNotFoundException, IOException, ClassNotFoundException {
 
 		System.out.println("Initializing DBPedia Ontology extractor...");

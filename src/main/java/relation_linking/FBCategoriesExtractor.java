@@ -20,6 +20,7 @@ public class FBCategoriesExtractor {
 	ArrayList<String> fbCategories = new ArrayList<String>();
 	private Map<String, String> listOfCleanCategories = new HashMap<String, String>();
 
+	@SuppressWarnings("unchecked")
 	public FBCategoriesExtractor() throws IOException, ClassNotFoundException {
 
 		System.out.println("Initializing FBCategories extractor...");
@@ -27,7 +28,8 @@ public class FBCategoriesExtractor {
 		File fbStore = new File("FBStore");
 		if (!fbStore.exists() || fbStore.isDirectory()) {
 	        Directory directory = new MMapDirectory(new File("/workspace/erd/index_wikipedia"));
-			IndexReader  indexReader = IndexReader.open(directory);
+			@SuppressWarnings("deprecation")
+			IndexReader indexReader = IndexReader.open(directory);
 			Fields fields = MultiFields.getFields(indexReader);
 			Terms terms = fields.terms("fb_category");
 			TermsEnum iterator = terms.iterator(null);

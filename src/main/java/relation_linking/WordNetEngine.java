@@ -68,6 +68,7 @@ public class WordNetEngine {
 		return results;
 	}
 
+	@SuppressWarnings("unchecked")
 	private Map<String, ArrayList<String>> getSynsets(String filename, boolean freebase)
 			throws JWNLException, FileNotFoundException, IOException, ClassNotFoundException {
 		File wordnetStore = new File(filename);
