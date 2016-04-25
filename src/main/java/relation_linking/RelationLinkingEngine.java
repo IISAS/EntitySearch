@@ -13,15 +13,15 @@ public class RelationLinkingEngine {
 		DIRECT, GLOVE, WORDNET;
 	}
 
-	private boolean directCheck = false;
-	private boolean checkGlove = false;
+	private boolean directCheck = true;
+	private boolean checkGlove = true;
 	private boolean checkWordNet = true;
 
-	private boolean withOpenIE = true;
+	private boolean withOpenIE = false;
 	private boolean withLexicalParser = false;
-	private boolean allOverSimilarity = false;
+	private boolean allOverSimilarity = true;
 
-	private double similarity = 0.5;
+	private double similarity = 0.8;
 
 	private String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
 	private String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
@@ -95,11 +95,11 @@ public class RelationLinkingEngine {
 
 		if (checkWordNet) {
 			if (withLexicalParser) {
-				wordnet = new WordNetEngine(JWNLPropertiesPath, lpe);
+				wordnet = new WordNetEngine(JWNLPropertiesPath, lpe, similarity);
 			} else if (withOpenIE) {
-				wordnet = new WordNetEngine(JWNLPropertiesPath, openIE);
+				wordnet = new WordNetEngine(JWNLPropertiesPath, openIE, similarity);
 			} else {
-				wordnet = new WordNetEngine(JWNLPropertiesPath);
+				wordnet = new WordNetEngine(JWNLPropertiesPath, similarity);
 			}
 		}
 

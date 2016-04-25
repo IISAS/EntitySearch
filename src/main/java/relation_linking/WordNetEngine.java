@@ -18,8 +18,9 @@ public class WordNetEngine {
 	private Map<String, ArrayList<String>> FreebaseSynsets;
 	private LexicalParsingEngine lpe = null;
 	private OpenIEEngine openIE = null;
+	private double similarity;
 
-	public WordNetEngine(String path) throws JWNLException, ClassNotFoundException, IOException {
+	public WordNetEngine(String path, double similarity) throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine...");
 
 		JWNL.initialize(new FileInputStream(path));
@@ -27,9 +28,10 @@ public class WordNetEngine {
 
 		DBPediaSynsets = getSynsetsForDBPedia();
 		FreebaseSynsets = getSynsetsForFreebase();
+		this.similarity = similarity;
 	}
 
-	public WordNetEngine(String path, LexicalParsingEngine lpe)
+	public WordNetEngine(String path, LexicalParsingEngine lpe, double similarity)
 			throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine with lexical parser...");
 
@@ -39,9 +41,10 @@ public class WordNetEngine {
 		DBPediaSynsets = getSynsetsForDBPedia();
 		FreebaseSynsets = getSynsetsForFreebase();
 		this.lpe = lpe;
+		this.similarity = similarity;
 	}
 
-	public WordNetEngine(String path, OpenIEEngine openIE) throws JWNLException, ClassNotFoundException, IOException {
+	public WordNetEngine(String path, OpenIEEngine openIE, double similarity) throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine with OpenIE...");
 
 		JWNL.initialize(new FileInputStream(path));
@@ -50,6 +53,7 @@ public class WordNetEngine {
 		DBPediaSynsets = getSynsetsForDBPedia();
 		FreebaseSynsets = getSynsetsForFreebase();
 		this.openIE = openIE;
+		this.similarity = similarity;
 	}
 
 	private ArrayList<String> getSynsetsFromWord(String relation) throws JWNLException {
@@ -160,7 +164,8 @@ public class WordNetEngine {
 			ArrayList<String> relSynsets = (ArrayList<String>) synsets.clone();
 			relSynsets.removeAll((Collection<?>) mapEntry.getValue());
 			if (relSynsets.size() != synsets.size()) {
-				results.add(mapEntry.getKey());
+				if (relSynsets.size() < similarity * synsets.size())
+					results.add(mapEntry.getKey());
 			}
 		}
 
