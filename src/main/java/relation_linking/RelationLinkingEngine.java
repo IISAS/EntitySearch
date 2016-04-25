@@ -17,7 +17,7 @@ public class RelationLinkingEngine {
 	private boolean checkGlove = false;
 	private boolean checkWordNet = true;
 
-	private boolean withOpenIE = false;
+	private boolean withOpenIE = true;
 	private boolean withLexicalParser = false;
 	private boolean allOverSimilarity = false;
 

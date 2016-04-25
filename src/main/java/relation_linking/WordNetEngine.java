@@ -123,8 +123,33 @@ public class WordNetEngine {
 		return new ArrayList<String>();
 	}
 
-	private ArrayList<String> getOpenIERelations(String sentence) {
-		return new ArrayList<String>();
+	private String[] splitRelation(String relation) {
+		return relation.split("\\s+");
+	}
+
+	private ArrayList<String> getOpenIERelations(String sentence) throws JWNLException {
+
+		ArrayList<String> openIERelations = openIE.getRelations(sentence);
+		ArrayList<String> results = new ArrayList<String>();
+
+		for (String relation : openIERelations) {
+			String[] words = splitRelation(relation);
+			for (String word : words) {
+				ArrayList<String> synsets = getSynsetsFromWord(word);
+
+				ArrayList<String> relations = isDBPediaRelation(synsets);
+				if (relations != null) {
+					results.addAll(relations);
+				}
+
+				relations = isFBCategory(synsets);
+				if (relations != null) {
+					results.addAll(relations);
+				}
+			}
+		}
+
+		return results;
 	}
 
 	private ArrayList<String> getRelations(ArrayList<String> synsets, Map<String, ArrayList<String>> map) {
