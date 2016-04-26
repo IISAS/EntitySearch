@@ -69,48 +69,48 @@ public class GloVeEngine {
 		this.allOverSimilarity = allOverSimilarity;
 	}
 
-	private ArrayList<String> getComposedRelations(ArrayList<String> sentenceParts) {
-		ArrayList<String> results = new ArrayList<String>();
+	private Map<String, Double> getComposedRelations(ArrayList<String> sentenceParts) {
+		Map<String, Double> results = new HashMap<String, Double>();
 
 		for (String sentencePart : sentenceParts) {
 
-			ArrayList<String> relations = isDBPediaRelation(sentencePart);
+			Map<String, Double> relations = isDBPediaRelation(sentencePart);
 			if (relations != null) {
-				results.addAll(relations);
+				results.putAll(relations);
 			}
 
 			relations = isFBCategory(sentencePart);
 			if (relations != null) {
-				results.addAll(relations);
+				results.putAll(relations);
 			}
 
 			relations = isInComposedDBPediaRelations(sentencePart);
 			if (relations != null) {
-				results.addAll(relations);
+				results.putAll(relations);
 			}
 
 			relations = isInComposedFBRelations(sentencePart);
 			if (relations != null) {
-				results.addAll(relations);
+				results.putAll(relations);
 			}
 		}
 
 		return results;
 	}
 
-	private ArrayList<String> getOpenIERelations(String sentence) {
+	private Map<String, Double> getOpenIERelations(String sentence) {
 		return getComposedRelations(openIE.getRelations(sentence));
 	}
 
-	private ArrayList<String> getLexicalizedRelations(String sentence) {
+	private Map<String, Double> getLexicalizedRelations(String sentence) {
 		return getComposedRelations(lpe.getPairsFromSentence(sentence));
 	}
 
-	private ArrayList<String> getStrippedRelations(String sentence) {
+	private Map<String, Double> getStrippedRelations(String sentence) {
 		return getComposedRelations(qse.getRelations(sentence));
 	}
 
-	public ArrayList<String> getRelations(String sentence) {
+	public Map<String, Double> getRelations(String sentence) {
 		System.out.println("Getting glove relations...");
 
 		if (lpe != null)
@@ -122,7 +122,7 @@ public class GloVeEngine {
 		if (qse != null)
 			return getStrippedRelations(sentence);
 
-		ArrayList<String> results = new ArrayList<String>();
+		Map<String, Double> results = new HashMap<String, Double>();
 
 		Reader reader = new StringReader(sentence);
 
@@ -132,24 +132,24 @@ public class GloVeEngine {
 			for (int i = 0; i < word.size(); i++) {
 				String sWord = word.get(i).toString();
 
-				ArrayList<String> relations = isDBPediaRelation(sWord);
+				Map<String, Double> relations = isDBPediaRelation(sWord);
 				if (relations != null) {
-					results.addAll(relations);
+					results.putAll(relations);
 				}
 
 				relations = isFBCategory(sWord);
 				if (relations != null) {
-					results.addAll(relations);
+					results.putAll(relations);
 				}
 
 				relations = isInComposedDBPediaRelations(sWord);
 				if (relations != null) {
-					results.addAll(relations);
+					results.putAll(relations);
 				}
 
 				relations = isInComposedFBRelations(sWord);
 				if (relations != null) {
-					results.addAll(relations);
+					results.putAll(relations);
 				}
 			}
 		}
@@ -194,11 +194,11 @@ public class GloVeEngine {
 		return sentence.toString();
 	}
 
-	private ArrayList<String> findComposedRelation(String word, boolean Freebase, Map<String, String> cleanTypes) {
+	private Map<String, Double> findComposedRelation(String word, boolean Freebase, Map<String, String> cleanTypes) {
 		double maxSimilarity = 0;
 		String maxRelation = null;
 		String key;
-		ArrayList<String> foundRelations = new ArrayList<String>();
+		Map<String, Double> foundRelations = new HashMap<String, Double>();
 
 		for (Map.Entry<String, String> entry : cleanTypes.entrySet()) {
 			key = entry.getKey();
@@ -214,7 +214,7 @@ public class GloVeEngine {
 			if (tSim > similarity) {
 				if (tSim != Double.MAX_VALUE) {
 					if (allOverSimilarity) {
-						foundRelations.add(key);
+						foundRelations.put(key, tSim);
 					} else if (tSim > maxSimilarity) {
 						maxRelation = key;
 						maxSimilarity = tSim;
@@ -225,24 +225,23 @@ public class GloVeEngine {
 		}
 
 		if (!allOverSimilarity)
-			foundRelations.add(maxRelation);
-		
-		System.out.println(maxSimilarity);
+			foundRelations.put(maxRelation, maxSimilarity);
+
 		return foundRelations;
 	}
 
-	private ArrayList<String> isInComposedDBPediaRelations(String word) {
+	private Map<String, Double> isInComposedDBPediaRelations(String word) {
 		return findComposedRelation(word, false, doe.getCleanDBPediaTypes());
 	}
 
-	private ArrayList<String> isInComposedFBRelations(String word) {
+	private Map<String, Double> isInComposedFBRelations(String word) {
 		return findComposedRelation(word, true, fce.getCleanFBCategories());
 	}
 
-	private ArrayList<String> findRelation(String word, ArrayList<String> relations) {
+	private Map<String, Double> findRelation(String word, ArrayList<String> relations) {
 		double maxSimilarity = 0;
 		String maxRelation = null;
-		ArrayList<String> foundResults = new ArrayList<String>();
+		Map<String, Double> foundResults = new HashMap<String, Double>();
 
 		for (String relation : relations) {
 
@@ -258,7 +257,7 @@ public class GloVeEngine {
 			if (tSim > similarity) {
 
 				if (allOverSimilarity) {
-					foundResults.add(relation);
+					foundResults.put(relation, tSim);
 				} else if (tSim > maxSimilarity) {
 					maxRelation = relation;
 					maxSimilarity = tSim;
@@ -267,16 +266,16 @@ public class GloVeEngine {
 		}
 
 		if (!allOverSimilarity)
-			foundResults.add(maxRelation);
+			foundResults.put(maxRelation, maxSimilarity);
 
 		return foundResults;
 	}
 
-	private ArrayList<String> isDBPediaRelation(String word) {
+	private Map<String, Double> isDBPediaRelation(String word) {
 		return findRelation(word, doe.getLowerDBPediaRelations());
 	}
 
-	private ArrayList<String> isFBCategory(String word) {
+	private Map<String, Double> isFBCategory(String word) {
 		return findRelation(word, fce.getCategories());
 	}
 }

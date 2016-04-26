@@ -5,21 +5,21 @@ import relation_linking.RelationLinkingEngine.METHOD_TYPE;
 public class Result {
 
 	private String name;
-	private boolean directSearch = false;
-	private boolean glove = false;
-	private boolean wordnet = false;
+	private Double directSearchSimilarity = 0.0;
+	private Double gloveSimilarity = 0.0;
+	private Double wordnetSimilarity = 0.0;
 	private boolean detected = false;
 
-	public Result(String name, METHOD_TYPE methodType) {
+	public Result(String name, METHOD_TYPE methodType, Double similarity) {
 		switch (methodType) {
 		case DIRECT:
-			directSearch = true;
+			directSearchSimilarity = similarity;
 			break;
 		case GLOVE:
-			glove = true;
+			gloveSimilarity = similarity;
 			break;
 		case WORDNET:
-			wordnet = true;
+			wordnetSimilarity = similarity;
 			break;
 		default:
 			break;
@@ -28,28 +28,28 @@ public class Result {
 		this.setName(name);
 	}
 
-	public boolean isDirectSearch() {
-		return directSearch;
+	public Double getDirectSearch() {
+		return directSearchSimilarity;
 	}
 
-	public void setDirectSearch(boolean directSearch) {
-		this.directSearch = directSearch;
+	public void setDirectSearch(Double directSearch) {
+		this.directSearchSimilarity = directSearch;
 	}
 
-	public boolean isGlove() {
-		return glove;
+	public Double getGlove() {
+		return gloveSimilarity;
 	}
 
-	public void setGlove(boolean glove) {
-		this.glove = glove;
+	public void setGlove(Double glove) {
+		this.gloveSimilarity = glove;
 	}
 
-	public boolean isWordNet() {
-		return wordnet;
+	public Double getWordNet() {
+		return wordnetSimilarity;
 	}
 
-	public void setWordNet(boolean wordnet) {
-		this.wordnet = wordnet;
+	public void setWordNet(Double wordnet) {
+		this.wordnetSimilarity = wordnet;
 	}
 
 	public boolean isDetected() {

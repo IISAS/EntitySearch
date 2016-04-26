@@ -123,15 +123,15 @@ public class RelationLinkingEngine {
 				results = addFoundRelations(dse.getRelations(record.getUtterance()), results, METHOD_TYPE.DIRECT,
 						record);
 
-			if (checkGlove)
-				results = addFoundRelations(glove.getRelations(record.getUtterance()), results, METHOD_TYPE.GLOVE,
-						record);
+				if (checkGlove)
+					results = addFoundRelations(glove.getRelations(record.getUtterance()), results, METHOD_TYPE.GLOVE,
+							record);
 
 			if (checkWordNet)
 				results = addFoundRelations(wordnet.getRelations(record.getUtterance()), results, METHOD_TYPE.WORDNET,
 						record);
 
-			printFoundRelations(results, record.getUtterance());
+				printFoundRelations(results, record.getUtterance());
 
 		}
 
@@ -186,10 +186,9 @@ public class RelationLinkingEngine {
 		} else {
 			for (Entry<String, Result> relation : results.entrySet()) {
 				Result result = relation.getValue();
-				printRow(utterance, result.getName(), valueForBool(result.isDirectSearch()),
-						valueForBool(result.isGlove()), valueForBool(result.isWordNet()),
-						valueForBool(result.isDetected()), String.valueOf(numberOfDetected),
-						String.valueOf(numberOfFound));
+				printRow(utterance, result.getName(), result.getDirectSearch().toString(), result.getGlove().toString(),
+						result.getWordNet().toString(), valueForBool(result.isDetected()),
+						String.valueOf(numberOfDetected), String.valueOf(numberOfFound));
 			}
 		}
 	}
@@ -204,34 +203,34 @@ public class RelationLinkingEngine {
 		return false;
 	}
 
-	private Map<String, Result> addFoundRelations(ArrayList<String> relations, Map<String, Result> results,
+	private Map<String, Result> addFoundRelations(Map<String, Double> relations, Map<String, Result> results,
 			METHOD_TYPE methodType, Record record) {
 
 		Result result;
 
-		for (String relation : relations) {
+		for (Entry<String, Double> relation : relations.entrySet()) {
 			if (relation == null)
 				continue;
-			if (results.containsKey(relation.toLowerCase())) {
-				result = results.get(relation.toLowerCase());
+			if (results.containsKey(relation.getKey().toLowerCase())) {
+				result = results.get(relation.getKey().toLowerCase());
 				switch (methodType) {
 				case DIRECT:
-					result.setDirectSearch(true);
+					result.setDirectSearch(relation.getValue());
 					break;
 				case GLOVE:
-					result.setGlove(true);
+					result.setGlove(relation.getValue());
 					break;
 				case WORDNET:
-					result.setWordNet(true);
+					result.setWordNet(relation.getValue());
 					break;
 				}
 			} else {
-				result = new Result(relation, methodType);
-				results.put(relation.toLowerCase(), result);
+				result = new Result(relation.getKey(), methodType, relation.getValue());
+				results.put(relation.getKey().toLowerCase(), result);
 			}
 
-			result.setDetected(isRelationDetected(relation, record));
-			results.replace(relation.toLowerCase(), result);
+			result.setDetected(isRelationDetected(relation.getKey(), record));
+			results.replace(relation.getKey().toLowerCase(), result);
 		}
 
 		return results;

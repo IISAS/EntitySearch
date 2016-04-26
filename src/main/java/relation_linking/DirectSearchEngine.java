@@ -24,12 +24,12 @@ public class DirectSearchEngine {
 		return matchedInSentence;
 	}
 
-	protected ArrayList<String> getRelations(String sentence)
+	protected Map<String, Double> getRelations(String sentence)
 			throws FileNotFoundException, UnsupportedEncodingException {
 
 		System.out.println("Getting direct search relations...");
-		
-		ArrayList<String> results = new ArrayList<String>();
+
+		Map<String, Double> results = new HashMap<String, Double>();
 
 		Reader reader = new StringReader(sentence);
 
@@ -41,23 +41,23 @@ public class DirectSearchEngine {
 			for (int i = 0; i < word.size(); i++) {
 				String sWord = word.get(i).toString();
 				if (isDBPediaRelation(sWord)) {
-					results.add(sWord);
+					results.put(sWord, new Double(1.0));
 					matchedInSentence++;
 				}
 				if (isFBCategory(sWord)) {
-					results.add(sWord);
+					results.put(sWord, new Double(1.0));
 					matchedInSentence++;
 				}
-				
+
 				String matched = isInComposedDBPediaRelations(word.get(i), word);
 				if (matched != null) {
-					results.add(matched);
+					results.put(matched, new Double(1.0));
 					matchedInSentence++;
 				}
-				
+
 				matched = isInComposedFBRelations(word.get(i), word);
 				if (matched != null) {
-					results.add(matched);
+					results.put(matched, new Double(1.0));
 					matchedInSentence++;
 				}
 			}
@@ -73,8 +73,9 @@ public class DirectSearchEngine {
 	private boolean isFBCategory(String word) {
 		return fce.getCategories().contains(word);
 	}
-	
-	private String findComposedRelation(HasWord word, List<HasWord> sentence, boolean Freebase, Map<String, String> cleanTypes){
+
+	private String findComposedRelation(HasWord word, List<HasWord> sentence, boolean Freebase,
+			Map<String, String> cleanTypes) {
 		boolean matched = false;
 		String key = new String();
 

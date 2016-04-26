@@ -44,7 +44,8 @@ public class WordNetEngine {
 		this.similarity = similarity;
 	}
 
-	public WordNetEngine(String path, OpenIEEngine openIE, double similarity) throws JWNLException, ClassNotFoundException, IOException {
+	public WordNetEngine(String path, OpenIEEngine openIE, double similarity)
+			throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine with OpenIE...");
 
 		JWNL.initialize(new FileInputStream(path));
@@ -123,32 +124,32 @@ public class WordNetEngine {
 		return getSynsets("FreebaseSynsets", true);
 	}
 
-	private ArrayList<String> getLexicalizedRelations(String sentence) {
-		return new ArrayList<String>();
+	private Map<String, Double> getLexicalizedRelations(String sentence) {
+		return new HashMap<String, Double>();
 	}
 
 	private String[] splitRelation(String relation) {
 		return relation.split("\\s+");
 	}
 
-	private ArrayList<String> getOpenIERelations(String sentence) throws JWNLException {
+	private Map<String, Double> getOpenIERelations(String sentence) throws JWNLException {
 
 		ArrayList<String> openIERelations = openIE.getRelations(sentence);
-		ArrayList<String> results = new ArrayList<String>();
+		Map<String, Double> results = new HashMap<String, Double>();
 
 		for (String relation : openIERelations) {
 			String[] words = splitRelation(relation);
 			for (String word : words) {
 				ArrayList<String> synsets = getSynsetsFromWord(word);
 
-				ArrayList<String> relations = isDBPediaRelation(synsets);
+				Map<String, Double> relations = isDBPediaRelation(synsets);
 				if (relations != null) {
-					results.addAll(relations);
+					results.putAll(relations);
 				}
 
 				relations = isFBCategory(synsets);
 				if (relations != null) {
-					results.addAll(relations);
+					results.putAll(relations);
 				}
 			}
 		}
@@ -156,8 +157,8 @@ public class WordNetEngine {
 		return results;
 	}
 
-	private ArrayList<String> getRelations(ArrayList<String> synsets, Map<String, ArrayList<String>> map) {
-		ArrayList<String> results = new ArrayList<String>();
+	private Map<String, Double> getRelations(ArrayList<String> synsets, Map<String, ArrayList<String>> map) {
+		Map<String, Double> results = new HashMap<String, Double>();
 
 		for (Entry<String, ArrayList<String>> mapEntry : map.entrySet()) {
 			@SuppressWarnings("unchecked")
@@ -165,22 +166,22 @@ public class WordNetEngine {
 			relSynsets.removeAll((Collection<?>) mapEntry.getValue());
 			if (relSynsets.size() != synsets.size()) {
 				if (relSynsets.size() < similarity * synsets.size())
-					results.add(mapEntry.getKey());
+					results.put(mapEntry.getKey(), new Double(relSynsets.size()));
 			}
 		}
 
 		return results;
 	}
 
-	private ArrayList<String> isDBPediaRelation(ArrayList<String> synsets) {
+	private Map<String, Double> isDBPediaRelation(ArrayList<String> synsets) {
 		return getRelations(synsets, DBPediaSynsets);
 	}
 
-	private ArrayList<String> isFBCategory(ArrayList<String> synsets) {
+	private Map<String, Double> isFBCategory(ArrayList<String> synsets) {
 		return getRelations(synsets, FreebaseSynsets);
 	}
 
-	public ArrayList<String> getRelations(String sentence) throws JWNLException {
+	public Map<String, Double> getRelations(String sentence) throws JWNLException {
 		System.out.println("Getting WordNet relations...");
 
 		if (lpe != null)
@@ -189,7 +190,7 @@ public class WordNetEngine {
 		if (openIE != null)
 			return getOpenIERelations(sentence);
 
-		ArrayList<String> results = new ArrayList<String>();
+		Map<String, Double> results = new HashMap<String, Double>();
 
 		Reader reader = new StringReader(sentence);
 
@@ -201,14 +202,14 @@ public class WordNetEngine {
 
 				ArrayList<String> synsets = getSynsetsFromWord(sWord);
 
-				ArrayList<String> relations = isDBPediaRelation(synsets);
+				Map<String, Double> relations = isDBPediaRelation(synsets);
 				if (relations != null) {
-					results.addAll(relations);
+					results.putAll(relations);
 				}
 
 				relations = isFBCategory(synsets);
 				if (relations != null) {
-					results.addAll(relations);
+					results.putAll(relations);
 				}
 			}
 		}
