@@ -13,15 +13,17 @@ public class RelationLinkingEngine {
 		DIRECT, GLOVE, WORDNET;
 	}
 
-	private boolean directCheck = true;
+	private boolean directCheck = false;
 	private boolean checkGlove = true;
-	private boolean checkWordNet = true;
+	private boolean checkWordNet = false;
 
 	private boolean withOpenIE = false;
-	private boolean withLexicalParser = false;
+	private boolean withLexicalParser = true;
+	private boolean withQueryStripping = false;
+	private boolean withEveryWord = true;
 	private boolean allOverSimilarity = true;
 
-	private double similarity = 0.8;
+	private double similarity = 90.0;
 
 	private String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
 	private String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
@@ -29,6 +31,7 @@ public class RelationLinkingEngine {
 	private String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
 	private String outputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
 	private String JWNLPropertiesPath = "file_properties.xml";
+	private String entitySearchResultsFilePath = "/Users/fjuras/OneDriveBusiness/DPResources/resultsWebquestions.txt";
 
 	private String outputUtteranceKey = "utterance";
 	private String outputRelationKey = "relation";
@@ -75,10 +78,13 @@ public class RelationLinkingEngine {
 
 		LexicalParsingEngine lpe = null;
 		OpenIEEngine openIE = null;
+		QueryStrippingEngine qse = null;
 		if (withLexicalParser)
 			lpe = new LexicalParsingEngine(lexicalParserModel);
 		if (withOpenIE)
 			openIE = new OpenIEEngine();
+		if (withQueryStripping)
+			qse = new QueryStrippingEngine(entitySearchResultsFilePath);
 
 		if (directCheck)
 			dse = new DirectSearchEngine();
@@ -86,9 +92,14 @@ public class RelationLinkingEngine {
 		if (checkGlove) {
 			if (withLexicalParser) {
 				glove = new GloVeEngine(gloveModelPath, similarity, lpe, allOverSimilarity);
-			} else if (withOpenIE) {
+			}
+			if (withOpenIE) {
 				glove = new GloVeEngine(gloveModelPath, similarity, openIE, allOverSimilarity);
-			} else {
+			}
+			if (withQueryStripping) {
+				glove = new GloVeEngine(gloveModelPath, similarity, qse, allOverSimilarity);
+			}
+			if (withEveryWord) {
 				glove = new GloVeEngine(gloveModelPath, similarity, allOverSimilarity);
 			}
 		}
@@ -199,6 +210,8 @@ public class RelationLinkingEngine {
 		Result result;
 
 		for (String relation : relations) {
+			if (relation == null)
+				continue;
 			if (results.containsKey(relation.toLowerCase())) {
 				result = results.get(relation.toLowerCase());
 				switch (methodType) {
