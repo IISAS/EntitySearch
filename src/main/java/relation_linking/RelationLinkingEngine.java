@@ -14,12 +14,12 @@ public class RelationLinkingEngine {
 	}
 
 	private boolean directCheck = false;
-	private boolean checkGlove = true;
-	private boolean checkWordNet = false;
+	private boolean checkGlove = false;
+	private boolean checkWordNet = true;
 
 	private boolean withOpenIE = false;
-	private boolean withLexicalParser = false;
-	private boolean withQueryStripping = true;
+	private boolean withLexicalParser = true;
+	private boolean withQueryStripping = false;
 	private boolean withEveryWord = false;
 	private boolean allOverSimilarity = true;
 

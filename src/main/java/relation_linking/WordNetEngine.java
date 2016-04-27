@@ -138,9 +138,26 @@ public class WordNetEngine {
 		return getSynsets("FreebaseSynsets", true);
 	}
 
-	private Map<String, Double> getLexicalizedRelations(String sentence) {
+	private Map<String, Double> getLexicalizedRelations(String sentence) throws JWNLException {
 		ArrayList<String> nouns = lpe.getNounsFromSentence(sentence);
-		return new HashMap<String, Double>();
+		
+		Map<String, Double> results = new HashMap<String, Double>();
+		
+		for (String word : nouns){
+			ArrayList<String> synsets = getSynsetsFromWord(word);
+
+			Map<String, Double> relations = isDBPediaRelation(synsets);
+			if (relations != null) {
+				results.putAll(relations);
+			}
+
+			relations = isFBCategory(synsets);
+			if (relations != null) {
+				results.putAll(relations);
+			}
+		}
+		
+		return results;
 	}
 
 	private String[] splitRelation(String relation) {

@@ -19,7 +19,7 @@ public class LexicalParsingEngine {
 		lp = LexicalizedParser.loadModel(parserModel);
 	}
 
-	private Collection<TypedDependency> parseSentence(String text) {
+	private Collection<TypedDependency> parseSentenceTDL(String text) {
 		System.out.println("Parsing sentence...");
 
 		Collection<TypedDependency> tdl = null;
@@ -34,6 +34,8 @@ public class LexicalParsingEngine {
 		for (List<HasWord> sentence : new DocumentPreprocessor(reader)) {
 			Tree parse = lp.apply(sentence);
 
+			System.out.println(parse.taggedYield());
+
 			if (gsf != null) {
 				GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
 				tdl = gs.allTypedDependencies();
@@ -42,8 +44,24 @@ public class LexicalParsingEngine {
 		return tdl;
 	}
 
+	private ArrayList<TaggedWord> parseSentenceTD(String text) {
+		System.out.println("Parsing sentence...");
+
+		ArrayList<TaggedWord> tw = new ArrayList<TaggedWord>();
+
+		Reader reader = new StringReader(text);
+
+		for (List<HasWord> sentence : new DocumentPreprocessor(reader)) {
+
+			Tree parse = lp.apply(sentence);
+
+			tw = parse.taggedYield();
+		}
+		return tw;
+	}
+
 	public ArrayList<String> getPairsFromSentence(String sentence) {
-		Collection<TypedDependency> tdl = parseSentence(sentence);
+		Collection<TypedDependency> tdl = parseSentenceTDL(sentence);
 		ArrayList<String> pairs = new ArrayList<String>();
 
 		for (TypedDependency td : tdl) {
@@ -58,13 +76,15 @@ public class LexicalParsingEngine {
 	}
 
 	public ArrayList<String> getNounsFromSentence(String sentence) {
-		Collection<TypedDependency> tdl = parseSentence(sentence);
+		ArrayList<TaggedWord> tw = parseSentenceTD(sentence);
 		ArrayList<String> nouns = new ArrayList<String>();
-		
-		for (TypedDependency td : tdl){
-			System.out.println(td);
+
+		for (TaggedWord t : tw) {
+			if (t.tag().startsWith("N")){
+				nouns.add(t.value());
+			}
 		}
-		
+
 		return nouns;
 	}
 }
