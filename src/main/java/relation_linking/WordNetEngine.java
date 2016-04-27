@@ -18,6 +18,7 @@ public class WordNetEngine {
 	private Map<String, ArrayList<String>> FreebaseSynsets;
 	private LexicalParsingEngine lpe = null;
 	private OpenIEEngine openIE = null;
+	private QueryStrippingEngine qse = null;
 	private double similarity;
 
 	public WordNetEngine(String path, double similarity) throws JWNLException, ClassNotFoundException, IOException {
@@ -54,6 +55,19 @@ public class WordNetEngine {
 		DBPediaSynsets = getSynsetsForDBPedia();
 		FreebaseSynsets = getSynsetsForFreebase();
 		this.openIE = openIE;
+		this.similarity = similarity;
+	}
+
+	public WordNetEngine(String path, QueryStrippingEngine qse, double similarity)
+			throws JWNLException, ClassNotFoundException, IOException {
+		System.out.println("Initializing WordNet Search engine with lexical parser...");
+
+		JWNL.initialize(new FileInputStream(path));
+		wordnet = Dictionary.getInstance();
+
+		DBPediaSynsets = getSynsetsForDBPedia();
+		FreebaseSynsets = getSynsetsForFreebase();
+		this.qse = qse;
 		this.similarity = similarity;
 	}
 
@@ -157,6 +171,27 @@ public class WordNetEngine {
 		return results;
 	}
 
+	private Map<String, Double> getQueryStrippedRelations(String sentence) throws JWNLException {
+		ArrayList<String> strippedWords = qse.getRelations(sentence);
+		Map<String, Double> results = new HashMap<String, Double>();
+
+		for (String relation : strippedWords) {
+			ArrayList<String> synsets = getSynsetsFromWord(relation);
+
+			Map<String, Double> relations = isDBPediaRelation(synsets);
+			if (relations != null) {
+				results.putAll(relations);
+			}
+
+			relations = isFBCategory(synsets);
+			if (relations != null) {
+				results.putAll(relations);
+			}
+		}
+
+		return results;
+	}
+
 	private Map<String, Double> getRelations(ArrayList<String> synsets, Map<String, ArrayList<String>> map) {
 		Map<String, Double> results = new HashMap<String, Double>();
 
@@ -165,8 +200,12 @@ public class WordNetEngine {
 			ArrayList<String> relSynsets = (ArrayList<String>) synsets.clone();
 			relSynsets.removeAll((Collection<?>) mapEntry.getValue());
 			if (relSynsets.size() != synsets.size()) {
-				if (relSynsets.size() < similarity * synsets.size())
-					results.put(mapEntry.getKey(), new Double(relSynsets.size()));
+				System.out.println(relSynsets.size() + "/" + synsets.size());
+				double number = (double) relSynsets.size() / (double) synsets.size();
+				if (((double) (1 - number)) > similarity) {
+					System.out.println(1 - number);
+					results.put(mapEntry.getKey(), new Double(1 - number));
+				}
 			}
 		}
 
@@ -189,6 +228,9 @@ public class WordNetEngine {
 
 		if (openIE != null)
 			return getOpenIERelations(sentence);
+
+		if (qse != null)
+			return getQueryStrippedRelations(sentence);
 
 		Map<String, Double> results = new HashMap<String, Double>();
 

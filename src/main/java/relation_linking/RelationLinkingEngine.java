@@ -18,12 +18,12 @@ public class RelationLinkingEngine {
 	private boolean checkWordNet = false;
 
 	private boolean withOpenIE = false;
-	private boolean withLexicalParser = true;
-	private boolean withQueryStripping = false;
-	private boolean withEveryWord = true;
+	private boolean withLexicalParser = false;
+	private boolean withQueryStripping = true;
+	private boolean withEveryWord = false;
 	private boolean allOverSimilarity = true;
 
-	private double similarity = 90.0;
+	private double similarity = 0.5;
 
 	private String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
 	private String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
@@ -107,9 +107,15 @@ public class RelationLinkingEngine {
 		if (checkWordNet) {
 			if (withLexicalParser) {
 				wordnet = new WordNetEngine(JWNLPropertiesPath, lpe, similarity);
-			} else if (withOpenIE) {
+			}
+			if (withOpenIE) {
 				wordnet = new WordNetEngine(JWNLPropertiesPath, openIE, similarity);
-			} else {
+			}
+			if (withQueryStripping) {
+				wordnet = new WordNetEngine(JWNLPropertiesPath, qse, similarity);
+			}
+
+			if (withEveryWord) {
 				wordnet = new WordNetEngine(JWNLPropertiesPath, similarity);
 			}
 		}
@@ -120,18 +126,18 @@ public class RelationLinkingEngine {
 			Map<String, Result> results = new HashMap<String, Result>();
 
 			if (directCheck)
-				results = addFoundRelations(dse.getRelations(record.getUtterance()), results, METHOD_TYPE.DIRECT,
-						record);
+				results.putAll(addFoundRelations(dse.getRelations(record.getUtterance()), results, METHOD_TYPE.DIRECT,
+						record));
 
-				if (checkGlove)
-					results = addFoundRelations(glove.getRelations(record.getUtterance()), results, METHOD_TYPE.GLOVE,
-							record);
+			if (checkGlove)
+				results.putAll(addFoundRelations(glove.getRelations(record.getUtterance()), results, METHOD_TYPE.GLOVE,
+						record));
 
 			if (checkWordNet)
-				results = addFoundRelations(wordnet.getRelations(record.getUtterance()), results, METHOD_TYPE.WORDNET,
-						record);
+				results.putAll(addFoundRelations(wordnet.getRelations(record.getUtterance()), results, METHOD_TYPE.WORDNET,
+						record));
 
-				printFoundRelations(results, record.getUtterance());
+			printFoundRelations(results, record.getUtterance());
 
 		}
 
