@@ -200,10 +200,11 @@ public class RelationLinkingEngine {
 	}
 
 	private boolean isRelationDetected(String relation, Record record) {
-		ArrayList<String> relations = record.getRelations();
+		Map<String, ArrayList<String>> relations = record.getRelations();
 
-		for (String rel : relations) {
-			if (rel.toLowerCase().compareTo(relation.toLowerCase()) == 0)
+		for (Entry<String, ArrayList<String>> rel : relations.entrySet()) {
+			for (String r : rel.getValue())
+			if (r.toLowerCase().compareTo(relation.toLowerCase()) == 0)
 				return true;
 		}
 		return false;
