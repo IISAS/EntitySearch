@@ -107,7 +107,18 @@ public class GloVeEngine {
 	}
 
 	private Map<String, Double> getStrippedRelations(String sentence) {
-		return getComposedRelations(qse.getRelations(sentence));
+		StringBuilder sb = new StringBuilder();
+		ArrayList<String> words = qse.getRelations(sentence);
+
+		for (String word : words) {
+			sb.append(word);
+			sb.append(" ");
+		}
+
+		words.clear();
+		words.add(sb.toString());
+
+		return getComposedRelations(words);
 	}
 
 	public Map<String, Double> getRelations(String sentence) {
@@ -206,13 +217,13 @@ public class GloVeEngine {
 			String[] r = Freebase ? fce.splitKey(key) : doe.splitKey(key);
 			String sentence = makeSentenceFromSequence(r);
 			double tSim = 0;
-			if (lpe != null) {
+			if (lpe != null || qse != null || openIE != null) {
 				tSim = getSentencesSimilarity(sentence, word);
 			} else {
 				tSim = getSimilarity(sentence, word);
 			}
 			if (tSim > similarity) {
-				if (tSim != Double.MAX_VALUE) {
+				if (Double.isFinite(tSim)) {
 					if (allOverSimilarity) {
 						foundRelations.put(key, tSim);
 					} else if (tSim > maxSimilarity) {
@@ -246,7 +257,7 @@ public class GloVeEngine {
 		for (String relation : relations) {
 
 			double tSim = 0;
-			if (lpe != null) {
+			if (lpe != null || qse != null || openIE != null) {
 				tSim = getSimilarity(word, relation);
 			} else {
 				if (isWordInModel(word) && isWordInModel(relation)) {
@@ -255,12 +266,14 @@ public class GloVeEngine {
 			}
 
 			if (tSim > similarity) {
+				if (Double.isFinite(tSim)) {
 
-				if (allOverSimilarity) {
-					foundResults.put(relation, tSim);
-				} else if (tSim > maxSimilarity) {
-					maxRelation = relation;
-					maxSimilarity = tSim;
+					if (allOverSimilarity) {
+						foundResults.put(relation, tSim);
+					} else if (tSim > maxSimilarity) {
+						maxRelation = relation;
+						maxSimilarity = tSim;
+					}
 				}
 			}
 		}

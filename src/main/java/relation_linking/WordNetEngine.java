@@ -139,6 +139,7 @@ public class WordNetEngine {
 	}
 
 	private Map<String, Double> getLexicalizedRelations(String sentence) {
+		ArrayList<String> nouns = lpe.getNounsFromSentence(sentence);
 		return new HashMap<String, Double>();
 	}
 

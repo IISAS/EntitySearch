@@ -56,4 +56,15 @@ public class LexicalParsingEngine {
 
 		return pairs;
 	}
+
+	public ArrayList<String> getNounsFromSentence(String sentence) {
+		Collection<TypedDependency> tdl = parseSentence(sentence);
+		ArrayList<String> nouns = new ArrayList<String>();
+		
+		for (TypedDependency td : tdl){
+			System.out.println(td);
+		}
+		
+		return nouns;
+	}
 }
