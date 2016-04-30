@@ -4,32 +4,39 @@ import java.io.*;
 import java.util.*;
 import java.util.Map.Entry;
 
+import com.ibm.icu.text.DecimalFormat;
+
 import DP_entity_linking.dataset.*;
 import net.didion.jwnl.JWNLException;
 
 public class RelationLinkingEngine {
 
-	public enum METHOD_TYPE {
+	public enum METHOD_MAPPING_TYPE {
 		DIRECT, GLOVE, WORDNET;
 	}
 
-	private boolean directCheck = false;
-	private boolean checkGlove = false;
+	public enum METHOD_DETECTION_TYPE {
+		ALL, OPENIE, LEXICALPARSER, QUERYSTRIPPING;
+	}
+
+	private boolean directCheck = true;
+	private boolean checkGlove = true;
 	private boolean checkWordNet = true;
 
-	private boolean withOpenIE = false;
+	private boolean withOpenIE = true;
 	private boolean withLexicalParser = true;
-	private boolean withQueryStripping = false;
-	private boolean withEveryWord = false;
+	private boolean withQueryStripping = true;
+	private boolean withEveryWord = true;
 	private boolean allOverSimilarity = true;
 
-	private double similarity = 0.5;
+	private double similarity = 0.1;
 
 	private String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
 	private String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
 	private String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.300d.txt";
 	private String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
-	private String outputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
+	private String csvOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
+	private String trainOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/trainSet";
 	private String JWNLPropertiesPath = "file_properties.xml";
 	private String entitySearchResultsFilePath = "/Users/fjuras/OneDriveBusiness/DPResources/resultsWebquestions.txt";
 
@@ -40,20 +47,31 @@ public class RelationLinkingEngine {
 	private String outputDetectedRelationsKey = "number of detected";
 	private String outputSeparator = ";";
 	private String outputDirectKey = "Direct";
-	private String outputGloveKey = "GloVe";
-	private String outputWordNetKey = "WordNet";
+	private String outputGloveLexicalKey = "GloVe_Lexical";
+	private String outputGloveOpenIEKey = "GloVe_OpenIE";
+	private String outputGloveStrippingKey = "GloVe_QuerryStripping";
+	private String outputGloveAllKey = "GloVe_All";
+	private String outputWordNetLexicalKey = "WordNet_Lexical";
+	private String outputWordNetOpenIEKey = "WordNet_OpenIE";
+	private String outputWordNetStrippingKey = "WordNet_QuerryStripping";
+	private String outputWordNetAllKey = "WordNet_All";
 	private String outputTrueValue = "1";
 	private String outputFalseValue = "0";
-	private String outputNotFoundValue = "NAN";
+	private String outputNotFoundValue = "-1";
 
-	private static DBPediaOntologyExtractor doe;
-	private static FBCategoriesExtractor fce;
+	private String outputTrainSeparator = " ";
+	private String outputCategory = "|a";
+	private String outputTrainValueSeparator = ":";
 
-	private FileWriter output;
+	private static DBPediaOntologyExtractor doe = null;
+	private static FBCategoriesExtractor fce = null;
 
-	private DirectSearchEngine dse;
-	private GloVeEngine glove;
-	private WordNetEngine wordnet;
+	private FileWriter csvOutput;
+	private FileWriter trainOutput;
+
+	private DirectSearchEngine dse = null;
+	private GloVeEngine glove = null;
+	private WordNetEngine wordnet = null;
 
 	public RelationLinkingEngine() {
 	}
@@ -69,9 +87,12 @@ public class RelationLinkingEngine {
 		DataSet dataset = new DataSet(datasetPath);
 		List<Record> records = dataset.loadWebquestions();
 
-		output = new FileWriter(outputPath);
-		printRow(outputUtteranceKey, outputRelationKey, outputDirectKey, outputGloveKey, outputWordNetKey,
-				outputDetectedKey, outputDetectedRelationsKey, outputFoundRelationsKey);
+		csvOutput = new FileWriter(csvOutputPath);
+		trainOutput = new FileWriter(trainOutputPath);
+		printCSVRow(outputUtteranceKey, outputRelationKey, outputDirectKey, outputGloveLexicalKey, outputGloveOpenIEKey,
+				outputGloveStrippingKey, outputGloveAllKey, outputWordNetLexicalKey, outputWordNetOpenIEKey,
+				outputWordNetStrippingKey, outputWordNetAllKey, outputDetectedKey, outputDetectedRelationsKey,
+				outputFoundRelationsKey);
 
 		doe = new DBPediaOntologyExtractor(dbPediaOntologyPath);
 		fce = new FBCategoriesExtractor();
@@ -126,44 +147,141 @@ public class RelationLinkingEngine {
 			Map<String, Result> results = new HashMap<String, Result>();
 
 			if (directCheck)
-				results.putAll(addFoundRelations(dse.getRelations(record.getUtterance()), results, METHOD_TYPE.DIRECT,
-						record));
+				results.putAll(addFoundRelations(dse.getRelations(record.getUtterance()), results,
+						METHOD_MAPPING_TYPE.DIRECT, null, record));
 
-			if (checkGlove)
-				results.putAll(addFoundRelations(glove.getRelations(record.getUtterance()), results, METHOD_TYPE.GLOVE,
-						record));
+			if (checkGlove) {
+				if (withLexicalParser) {
+					results.putAll(addFoundRelations(glove.getRelations(record.getUtterance()), results,
+							METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.LEXICALPARSER, record));
+				}
+				if (withOpenIE) {
+					results.putAll(addFoundRelations(glove.getRelations(record.getUtterance()), results,
+							METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.OPENIE, record));
+				}
+				if (withQueryStripping) {
+					results.putAll(addFoundRelations(glove.getRelations(record.getUtterance()), results,
+							METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.QUERYSTRIPPING, record));
+				}
 
-			if (checkWordNet)
-				results.putAll(addFoundRelations(wordnet.getRelations(record.getUtterance()), results, METHOD_TYPE.WORDNET,
-						record));
+				if (withEveryWord) {
+					results.putAll(addFoundRelations(glove.getRelations(record.getUtterance()), results,
+							METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.ALL, record));
+				}
+			}
+			if (checkWordNet) {
+				if (withLexicalParser) {
+					results.putAll(addFoundRelations(wordnet.getRelations(record.getUtterance()), results,
+							METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.LEXICALPARSER, record));
+				}
+				if (withOpenIE) {
+					results.putAll(addFoundRelations(wordnet.getRelations(record.getUtterance()), results,
+							METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.OPENIE, record));
+				}
+				if (withQueryStripping) {
+					results.putAll(addFoundRelations(wordnet.getRelations(record.getUtterance()), results,
+							METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.QUERYSTRIPPING, record));
+				}
+
+				if (withEveryWord) {
+					results.putAll(addFoundRelations(wordnet.getRelations(record.getUtterance()), results,
+							METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.ALL, record));
+				}
+			}
 
 			printFoundRelations(results, record.getUtterance());
 
 		}
 
-		output.flush();
-		output.close();
+		csvOutput.flush();
+		trainOutput.close();
 	}
 
-	private void printRow(String utteranceValue, String relationValue, String directValue, String gloveValue,
-			String wordNetValue, String detectedValue, String foundValue, String detectedNumberValue)
-			throws IOException {
-		output.append(utteranceValue);
-		output.append(outputSeparator);
-		output.append(relationValue);
-		output.append(outputSeparator);
-		output.append(directValue);
-		output.append(outputSeparator);
-		output.append(gloveValue);
-		output.append(outputSeparator);
-		output.append(wordNetValue);
-		output.append(outputSeparator);
-		output.append(detectedValue);
-		output.append(outputSeparator);
-		output.append(foundValue);
-		output.append(outputSeparator);
-		output.append(detectedNumberValue);
-		output.append("\n");
+	private void printCSVRow(String utteranceValue, String relationValue, String directValue, String gloveLexicalValue,
+			String gloveOpenIEValue, String gloveStrippingValue, String gloveAllValue, String wordNetLexicalValue,
+			String wordNetOpenIEValue, String wordNetStrippingValue, String wordNetAllValue, String detectedValue,
+			String foundValue, String detectedNumberValue) throws IOException {
+
+		csvOutput.append(utteranceValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(relationValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(directValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(gloveLexicalValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(gloveOpenIEValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(gloveStrippingValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(gloveAllValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(wordNetLexicalValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(wordNetOpenIEValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(wordNetStrippingValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(wordNetAllValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(detectedValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(foundValue);
+		csvOutput.append(outputSeparator);
+		csvOutput.append(detectedNumberValue);
+		csvOutput.append("\n");
+	}
+
+	private void printTrainRow(boolean found, String relationName, Double direct, Double gloveLexical,
+			Double gloveOpenIE, Double gloveStripping, Double gloveAll, Double wordnetLexical, Double wordnetOpenIE,
+			Double wordnetStripping, Double wordnetAll) throws IOException {
+
+		DecimalFormat formatter = new DecimalFormat("#0.00");
+
+		if (found)
+			trainOutput.append(outputTrueValue);
+		else
+			trainOutput.append(outputNotFoundValue);
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputCategory);
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(relationName);
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputDirectKey);
+		trainOutput.append(outputTrainValueSeparator);
+		trainOutput.append(formatter.format(direct));
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputGloveLexicalKey);
+		trainOutput.append(outputTrainValueSeparator);
+		trainOutput.append(formatter.format(gloveLexical));
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputGloveOpenIEKey);
+		trainOutput.append(outputTrainValueSeparator);
+		trainOutput.append(formatter.format(gloveOpenIE));
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputGloveStrippingKey);
+		trainOutput.append(outputTrainValueSeparator);
+		trainOutput.append(formatter.format(gloveStripping));
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputGloveAllKey);
+		trainOutput.append(outputTrainValueSeparator);
+		trainOutput.append(formatter.format(gloveAll));
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputWordNetLexicalKey);
+		trainOutput.append(outputTrainValueSeparator);
+		trainOutput.append(formatter.format(wordnetLexical));
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputWordNetOpenIEKey);
+		trainOutput.append(outputTrainValueSeparator);
+		trainOutput.append(formatter.format(wordnetOpenIE));
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputWordNetStrippingKey);
+		trainOutput.append(outputTrainValueSeparator);
+		trainOutput.append(formatter.format(wordnetStripping));
+		trainOutput.append(outputTrainSeparator);
+		trainOutput.append(outputWordNetAllKey);
+		trainOutput.append(outputTrainValueSeparator);
+		trainOutput.append(formatter.format(wordnetAll));
 	}
 
 	private int getNumberOfDetected(Map<String, Result> results) {
@@ -187,14 +305,29 @@ public class RelationLinkingEngine {
 		int numberOfFound = results.size();
 
 		if (results.isEmpty()) {
-			printRow(utterance, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue,
-					outputNotFoundValue, String.valueOf(numberOfDetected), String.valueOf(numberOfFound));
+			printCSVRow(utterance, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue,
+					outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue,
+					outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, String.valueOf(numberOfDetected),
+					String.valueOf(numberOfFound));
 		} else {
 			for (Entry<String, Result> relation : results.entrySet()) {
 				Result result = relation.getValue();
-				printRow(utterance, result.getName(), result.getDirectSearch().toString(), result.getGlove().toString(),
-						result.getWordNet().toString(), valueForBool(result.isDetected()),
+				DecimalFormat formatter = new DecimalFormat("#0.00");
+				printCSVRow(utterance, result.getName(), formatter.format(result.getDirectSearch()),
+						formatter.format(result.getGloveLexicalParserSimilarity()),
+						formatter.format(result.getGloveOpenIESimilarity()),
+						formatter.format(result.getGloveStrippingSimilarity()),
+						formatter.format(result.getGloveAllSimilarity()),
+						formatter.format(result.getWordnetLexicalParserSimilarity()),
+						formatter.format(result.getWordnetOpenIESimilarity()),
+						formatter.format(result.getWordnetStrippingSimilarity()),
+						formatter.format(result.getWordnetAllSimilarity()), valueForBool(result.isDetected()),
 						String.valueOf(numberOfDetected), String.valueOf(numberOfFound));
+				printTrainRow(result.isDetected(), result.getName(), result.getDirectSearch(),
+						result.getGloveLexicalParserSimilarity(), result.getGloveOpenIESimilarity(),
+						result.getGloveStrippingSimilarity(), result.getGloveAllSimilarity(),
+						result.getWordnetLexicalParserSimilarity(), result.getWordnetOpenIESimilarity(),
+						result.getWordnetStrippingSimilarity(), result.getWordnetAllSimilarity());
 			}
 		}
 	}
@@ -204,14 +337,14 @@ public class RelationLinkingEngine {
 
 		for (Entry<String, ArrayList<String>> rel : relations.entrySet()) {
 			for (String r : rel.getValue())
-			if (r.toLowerCase().compareTo(relation.toLowerCase()) == 0)
-				return true;
+				if (r.toLowerCase().compareTo(relation.toLowerCase()) == 0)
+					return true;
 		}
 		return false;
 	}
 
 	private Map<String, Result> addFoundRelations(Map<String, Double> relations, Map<String, Result> results,
-			METHOD_TYPE methodType, Record record) {
+			METHOD_MAPPING_TYPE mappingType, METHOD_DETECTION_TYPE detectionType, Record record) {
 
 		Result result;
 
@@ -220,19 +353,50 @@ public class RelationLinkingEngine {
 				continue;
 			if (results.containsKey(relation.getKey().toLowerCase())) {
 				result = results.get(relation.getKey().toLowerCase());
-				switch (methodType) {
+				switch (mappingType) {
 				case DIRECT:
 					result.setDirectSearch(relation.getValue());
 					break;
-				case GLOVE:
-					result.setGlove(relation.getValue());
+				case GLOVE: {
+					switch (detectionType) {
+					case ALL:
+						result.setGloveAllSimilarity(relation.getValue());
+						break;
+					case OPENIE:
+						result.setGloveOpenIESimilarity(relation.getValue());
+						break;
+					case LEXICALPARSER:
+						result.setGloveLexicalParserSimilarity(relation.getValue());
+						break;
+					case QUERYSTRIPPING:
+						result.setGloveStrippingSimilarity(relation.getValue());
+						break;
+					default:
+						break;
+					}
+				}
 					break;
 				case WORDNET:
-					result.setWordNet(relation.getValue());
+					switch (detectionType) {
+					case ALL:
+						result.setWordnetAllSimilarity(relation.getValue());
+						break;
+					case OPENIE:
+						result.setWordnetOpenIESimilarity(relation.getValue());
+						break;
+					case LEXICALPARSER:
+						result.setWordnetLexicalParserSimilarity(relation.getValue());
+						break;
+					case QUERYSTRIPPING:
+						result.setWordnetStrippingSimilarity(relation.getValue());
+						break;
+					default:
+						break;
+					}
 					break;
 				}
 			} else {
-				result = new Result(relation.getKey(), methodType, relation.getValue());
+				result = new Result(relation.getKey(), mappingType, detectionType, relation.getValue());
 				results.put(relation.getKey().toLowerCase(), result);
 			}
 

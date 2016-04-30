@@ -10,8 +10,8 @@ import word2vec.*;
 
 public class GloVeEngine {
 
-	private DBPediaOntologyExtractor doe;
-	private FBCategoriesExtractor fce;
+	private DBPediaOntologyExtractor doe = null;
+	private FBCategoriesExtractor fce = null;
 	private LexicalParsingEngine lpe = null;
 	private OpenIEEngine openIE = null;
 	private QueryStrippingEngine qse = null;
@@ -19,16 +19,20 @@ public class GloVeEngine {
 	private boolean allOverSimilarity;
 	private double similarity;
 
-	private GloVeSpace model;
+	private GloVeSpace model = null;
 
 	public GloVeEngine(String modelPath, double similarity, boolean allOverSimilarity) {
 
 		System.out.println("Initializing Glove search engine...");
 
-		model = new GloVeSpace();
-		model = GloVeSpace.load(modelPath, false, false);
-		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
-		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
+		if (model == null) {
+			model = new GloVeSpace();
+			model = GloVeSpace.load(modelPath, false, false);
+		}
+		if (this.doe == null)
+			this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
+		if (this.fce == null)
+			this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
 		this.similarity = similarity;
 		this.allOverSimilarity = allOverSimilarity;
 	}
@@ -36,11 +40,16 @@ public class GloVeEngine {
 	public GloVeEngine(String modelPath, double similarity, LexicalParsingEngine lpe, boolean allOverSimilarity) {
 		System.out.println("Initializing Glove search engine with lexical parser...");
 
-		model = new GloVeSpace();
-		model = GloVeSpace.load(modelPath, false, false);
-		this.lpe = lpe;
-		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
-		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
+		if (model == null) {
+			model = new GloVeSpace();
+			model = GloVeSpace.load(modelPath, false, false);
+		}
+		if (this.lpe == null)
+			this.lpe = lpe;
+		if (this.doe == null)
+			this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
+		if (this.fce == null)
+			this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
 		this.similarity = similarity;
 		this.allOverSimilarity = allOverSimilarity;
 	}
@@ -48,11 +57,16 @@ public class GloVeEngine {
 	public GloVeEngine(String modelPath, double similarity, OpenIEEngine openIE, boolean allOverSimilarity) {
 		System.out.println("Initializing Glove search engine with OpenIE...");
 
-		model = new GloVeSpace();
-		model = GloVeSpace.load(modelPath, false, false);
-		this.openIE = openIE;
-		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
-		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
+		if (model == null) {
+			model = new GloVeSpace();
+			model = GloVeSpace.load(modelPath, false, false);
+		}
+		if (this.openIE == null)
+			this.openIE = openIE;
+		if (this.doe == null)
+			this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
+		if (this.fce == null)
+			this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
 		this.similarity = similarity;
 		this.allOverSimilarity = allOverSimilarity;
 	}
@@ -60,11 +74,16 @@ public class GloVeEngine {
 	public GloVeEngine(String modelPath, double similarity, QueryStrippingEngine qse, boolean allOverSimilarity) {
 		System.out.println("Initializing Glove search engine with Query stripping...");
 
-		model = new GloVeSpace();
-		model = GloVeSpace.load(modelPath, false, false);
-		this.qse = qse;
-		this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
-		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
+		if (model == null) {
+			model = new GloVeSpace();
+			model = GloVeSpace.load(modelPath, false, false);
+		}
+		if (this.qse == null)
+			this.qse = qse;
+		if (this.doe == null)
+			this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
+		if (this.fce == null)
+			this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
 		this.similarity = similarity;
 		this.allOverSimilarity = allOverSimilarity;
 	}

@@ -8,11 +8,12 @@ import util.StopWords;
 public class QueryStrippingEngine {
 
 	private String filePath;
-	private Map<String, String> entities;
+	private Map<String, String> entities = null;
 
 	public QueryStrippingEngine(String filePath) throws FileNotFoundException, IOException, ClassNotFoundException {
 		this.filePath = filePath;
-		getEntities();
+		if (entities == null)
+			getEntities();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -64,7 +65,8 @@ public class QueryStrippingEngine {
 			listOfWords.remove(word);
 		}
 
-		StopWords stopWords = new StopWords(new File("/Users/fjuras/EntitySearch/src/main/resources/data/stop-words_long.txt"));
+		StopWords stopWords = new StopWords(
+				new File("/Users/fjuras/EntitySearch/src/main/resources/data/stop-words_long.txt"));
 		Set<String> stopW = stopWords.getStopWords();
 
 		ArrayList<String> copy = new ArrayList<String>(listOfWords);
@@ -73,16 +75,16 @@ public class QueryStrippingEngine {
 				listOfWords.remove(word);
 			}
 		}
-		
+
 		StringBuilder sb = new StringBuilder();
-		for (String word : listOfWords){
+		for (String word : listOfWords) {
 			sb.append(word);
 			sb.append(" ");
 		}
-		
+
 		listOfWords.clear();
 		listOfWords.add(sb.toString());
-		
+
 		return listOfWords;
 	}
 

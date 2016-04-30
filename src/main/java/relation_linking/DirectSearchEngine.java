@@ -41,23 +41,23 @@ public class DirectSearchEngine {
 			for (int i = 0; i < word.size(); i++) {
 				String sWord = word.get(i).toString();
 				if (isDBPediaRelation(sWord)) {
-					results.put(sWord, new Double(1.0));
+					results.put(sWord, new Double(1.00));
 					matchedInSentence++;
 				}
 				if (isFBCategory(sWord)) {
-					results.put(sWord, new Double(1.0));
+					results.put(sWord, new Double(1.00));
 					matchedInSentence++;
 				}
 
 				String matched = isInComposedDBPediaRelations(word.get(i), word);
 				if (matched != null) {
-					results.put(matched, new Double(1.0));
+					results.put(matched, new Double(1.00));
 					matchedInSentence++;
 				}
 
 				matched = isInComposedFBRelations(word.get(i), word);
 				if (matched != null) {
-					results.put(matched, new Double(1.0));
+					results.put(matched, new Double(1.00));
 					matchedInSentence++;
 				}
 			}

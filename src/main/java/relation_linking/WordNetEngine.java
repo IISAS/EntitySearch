@@ -13,9 +13,9 @@ import net.didion.jwnl.dictionary.Dictionary;
 
 public class WordNetEngine {
 
-	Dictionary wordnet;
-	private Map<String, ArrayList<String>> DBPediaSynsets;
-	private Map<String, ArrayList<String>> FreebaseSynsets;
+	Dictionary wordnet = null;
+	private Map<String, ArrayList<String>> DBPediaSynsets = null;
+	private Map<String, ArrayList<String>> FreebaseSynsets = null;
 	private LexicalParsingEngine lpe = null;
 	private OpenIEEngine openIE = null;
 	private QueryStrippingEngine qse = null;
@@ -24,11 +24,15 @@ public class WordNetEngine {
 	public WordNetEngine(String path, double similarity) throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine...");
 
-		JWNL.initialize(new FileInputStream(path));
-		wordnet = Dictionary.getInstance();
+		if (wordnet == null) {
+			JWNL.initialize(new FileInputStream(path));
+			wordnet = Dictionary.getInstance();
+		}
 
-		DBPediaSynsets = getSynsetsForDBPedia();
-		FreebaseSynsets = getSynsetsForFreebase();
+		if (DBPediaSynsets == null)
+			DBPediaSynsets = getSynsetsForDBPedia();
+		if (FreebaseSynsets == null)
+			FreebaseSynsets = getSynsetsForFreebase();
 		this.similarity = similarity;
 	}
 
@@ -36,12 +40,17 @@ public class WordNetEngine {
 			throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine with lexical parser...");
 
-		JWNL.initialize(new FileInputStream(path));
-		wordnet = Dictionary.getInstance();
+		if (wordnet == null) {
+			JWNL.initialize(new FileInputStream(path));
+			wordnet = Dictionary.getInstance();
+		}
 
-		DBPediaSynsets = getSynsetsForDBPedia();
-		FreebaseSynsets = getSynsetsForFreebase();
-		this.lpe = lpe;
+		if (DBPediaSynsets == null)
+			DBPediaSynsets = getSynsetsForDBPedia();
+		if (FreebaseSynsets == null)
+			FreebaseSynsets = getSynsetsForFreebase();
+		if (this.lpe == null)
+			this.lpe = lpe;
 		this.similarity = similarity;
 	}
 
@@ -49,12 +58,17 @@ public class WordNetEngine {
 			throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine with OpenIE...");
 
-		JWNL.initialize(new FileInputStream(path));
-		wordnet = Dictionary.getInstance();
+		if (wordnet == null) {
+			JWNL.initialize(new FileInputStream(path));
+			wordnet = Dictionary.getInstance();
+		}
 
-		DBPediaSynsets = getSynsetsForDBPedia();
-		FreebaseSynsets = getSynsetsForFreebase();
-		this.openIE = openIE;
+		if (DBPediaSynsets == null)
+			DBPediaSynsets = getSynsetsForDBPedia();
+		if (FreebaseSynsets == null)
+			FreebaseSynsets = getSynsetsForFreebase();
+		if (this.openIE == null)
+			this.openIE = openIE;
 		this.similarity = similarity;
 	}
 
@@ -62,12 +76,17 @@ public class WordNetEngine {
 			throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine with lexical parser...");
 
-		JWNL.initialize(new FileInputStream(path));
-		wordnet = Dictionary.getInstance();
+		if (wordnet == null) {
+			JWNL.initialize(new FileInputStream(path));
+			wordnet = Dictionary.getInstance();
+		}
 
-		DBPediaSynsets = getSynsetsForDBPedia();
-		FreebaseSynsets = getSynsetsForFreebase();
-		this.qse = qse;
+		if (DBPediaSynsets == null)
+			DBPediaSynsets = getSynsetsForDBPedia();
+		if (FreebaseSynsets == null)
+			FreebaseSynsets = getSynsetsForFreebase();
+		if (this.qse == null)
+			this.qse = qse;
 		this.similarity = similarity;
 	}
 
@@ -140,10 +159,10 @@ public class WordNetEngine {
 
 	private Map<String, Double> getLexicalizedRelations(String sentence) throws JWNLException {
 		ArrayList<String> nouns = lpe.getNounsFromSentence(sentence);
-		
+
 		Map<String, Double> results = new HashMap<String, Double>();
-		
-		for (String word : nouns){
+
+		for (String word : nouns) {
 			ArrayList<String> synsets = getSynsetsFromWord(word);
 
 			Map<String, Double> relations = isDBPediaRelation(synsets);
@@ -156,7 +175,7 @@ public class WordNetEngine {
 				results.putAll(relations);
 			}
 		}
-		
+
 		return results;
 	}
 
