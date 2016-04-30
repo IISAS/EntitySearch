@@ -237,10 +237,8 @@ public class WordNetEngine {
 			ArrayList<String> relSynsets = (ArrayList<String>) synsets.clone();
 			relSynsets.removeAll((Collection<?>) mapEntry.getValue());
 			if (relSynsets.size() != synsets.size()) {
-				System.out.println(relSynsets.size() + "/" + synsets.size());
 				double number = (double) relSynsets.size() / (double) synsets.size();
 				if (((double) (1 - number)) > similarity) {
-					System.out.println(1 - number);
 					results.put(mapEntry.getKey(), new Double(1 - number));
 				}
 			}

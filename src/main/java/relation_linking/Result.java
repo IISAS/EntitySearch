@@ -15,6 +15,7 @@ public class Result {
 	private Double wordnetOpenIESimilarity = 0.00;
 	private Double wordnetLexicalParserSimilarity = 0.00;
 	private Double wordnetStrippingSimilarity = 0.00;
+	private Integer numberOfRelations = 0;
 	private boolean detected = false;
 
 	public Result(String name, METHOD_MAPPING_TYPE mappingType, METHOD_DETECTION_TYPE detectionType,
@@ -154,6 +155,14 @@ public class Result {
 
 	public void setWordnetStrippingSimilarity(Double wordnetStrippingSimilarity) {
 		this.wordnetStrippingSimilarity = wordnetStrippingSimilarity;
+	}
+
+	public Integer getNumberOfRelations() {
+		return numberOfRelations;
+	}
+
+	public void setNumberOfRelations(Integer numberOfRelations) {
+		this.numberOfRelations = numberOfRelations;
 	}
 
 }

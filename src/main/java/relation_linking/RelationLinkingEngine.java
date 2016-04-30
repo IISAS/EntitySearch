@@ -45,6 +45,7 @@ public class RelationLinkingEngine {
 	private String outputDetectedKey = "detected";
 	private String outputFoundRelationsKey = "number of found";
 	private String outputDetectedRelationsKey = "number of detected";
+	private String outputFromDetectedKey = "detected from";
 	private String outputSeparator = ";";
 	private String outputDirectKey = "Direct";
 	private String outputGloveLexicalKey = "GloVe_Lexical";
@@ -58,6 +59,7 @@ public class RelationLinkingEngine {
 	private String outputTrueValue = "1";
 	private String outputFalseValue = "0";
 	private String outputNotFoundValue = "-1";
+	private String outputNewLine = "\n";
 
 	private String outputTrainSeparator = " ";
 	private String outputCategory = "|a";
@@ -92,7 +94,7 @@ public class RelationLinkingEngine {
 		printCSVRow(outputUtteranceKey, outputRelationKey, outputDirectKey, outputGloveLexicalKey, outputGloveOpenIEKey,
 				outputGloveStrippingKey, outputGloveAllKey, outputWordNetLexicalKey, outputWordNetOpenIEKey,
 				outputWordNetStrippingKey, outputWordNetAllKey, outputDetectedKey, outputDetectedRelationsKey,
-				outputFoundRelationsKey);
+				outputFoundRelationsKey, outputFromDetectedKey);
 
 		doe = new DBPediaOntologyExtractor(dbPediaOntologyPath);
 		fce = new FBCategoriesExtractor();
@@ -200,7 +202,7 @@ public class RelationLinkingEngine {
 	private void printCSVRow(String utteranceValue, String relationValue, String directValue, String gloveLexicalValue,
 			String gloveOpenIEValue, String gloveStrippingValue, String gloveAllValue, String wordNetLexicalValue,
 			String wordNetOpenIEValue, String wordNetStrippingValue, String wordNetAllValue, String detectedValue,
-			String foundValue, String detectedNumberValue) throws IOException {
+			String foundValue, String detectedNumberValue, String outputFromDetectedValue) throws IOException {
 
 		csvOutput.append(utteranceValue);
 		csvOutput.append(outputSeparator);
@@ -229,7 +231,9 @@ public class RelationLinkingEngine {
 		csvOutput.append(foundValue);
 		csvOutput.append(outputSeparator);
 		csvOutput.append(detectedNumberValue);
-		csvOutput.append("\n");
+		csvOutput.append(outputSeparator);
+		csvOutput.append(outputFromDetectedValue);
+		csvOutput.append(outputNewLine);
 	}
 
 	private void printTrainRow(boolean found, String relationName, Double direct, Double gloveLexical,
@@ -282,6 +286,7 @@ public class RelationLinkingEngine {
 		trainOutput.append(outputWordNetAllKey);
 		trainOutput.append(outputTrainValueSeparator);
 		trainOutput.append(formatter.format(wordnetAll));
+		trainOutput.append(outputNewLine);
 	}
 
 	private int getNumberOfDetected(Map<String, Result> results) {
@@ -308,7 +313,7 @@ public class RelationLinkingEngine {
 			printCSVRow(utterance, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue,
 					outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, outputNotFoundValue,
 					outputNotFoundValue, outputNotFoundValue, outputNotFoundValue, String.valueOf(numberOfDetected),
-					String.valueOf(numberOfFound));
+					String.valueOf(numberOfFound), outputNotFoundValue);
 		} else {
 			for (Entry<String, Result> relation : results.entrySet()) {
 				Result result = relation.getValue();
@@ -322,7 +327,7 @@ public class RelationLinkingEngine {
 						formatter.format(result.getWordnetOpenIESimilarity()),
 						formatter.format(result.getWordnetStrippingSimilarity()),
 						formatter.format(result.getWordnetAllSimilarity()), valueForBool(result.isDetected()),
-						String.valueOf(numberOfDetected), String.valueOf(numberOfFound));
+						String.valueOf(numberOfDetected), String.valueOf(numberOfFound), result.getNumberOfRelations().toString());
 				printTrainRow(result.isDetected(), result.getName(), result.getDirectSearch(),
 						result.getGloveLexicalParserSimilarity(), result.getGloveOpenIESimilarity(),
 						result.getGloveStrippingSimilarity(), result.getGloveAllSimilarity(),
@@ -341,6 +346,11 @@ public class RelationLinkingEngine {
 					return true;
 		}
 		return false;
+	}
+
+	private Integer getNumberOfRelations(Record record) {
+		Map<String, ArrayList<String>> relations = record.getRelations();
+		return new Integer(relations.size());
 	}
 
 	private Map<String, Result> addFoundRelations(Map<String, Double> relations, Map<String, Result> results,
@@ -401,6 +411,7 @@ public class RelationLinkingEngine {
 			}
 
 			result.setDetected(isRelationDetected(relation.getKey(), record));
+			result.setNumberOfRelations(getNumberOfRelations(record));
 			results.replace(relation.getKey().toLowerCase(), result);
 		}
 
