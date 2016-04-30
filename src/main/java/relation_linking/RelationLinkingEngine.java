@@ -245,11 +245,11 @@ public class RelationLinkingEngine {
 		csvOutput.append(outputSeparator);
 		csvOutput.append(detectedNumberValue);
 		csvOutput.append(outputSeparator);
+		csvOutput.append(outputFromDetectedAllValue);
+		csvOutput.append(outputSeparator);
 		csvOutput.append(outputFromDetectedValue);
 		csvOutput.append(outputSeparator);
 		csvOutput.append(outputDetectedForValue);
-		csvOutput.append(outputSeparator);
-		csvOutput.append(outputFromDetectedAllValue);
 		csvOutput.append(outputNewLine);
 	}
 
@@ -384,7 +384,7 @@ public class RelationLinkingEngine {
 
 		for (Entry<String, ArrayList<String>> entry : relations.entrySet()) {
 			for (String rel : entry.getValue())
-				if (rel.toLowerCase().equals(relation))
+				if (rel.toLowerCase().equals(relation.toLowerCase()))
 					return entry.getKey();
 		}
 		return null;
