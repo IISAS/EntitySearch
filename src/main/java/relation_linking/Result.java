@@ -16,6 +16,8 @@ public class Result {
 	private Double wordnetLexicalParserSimilarity = 0.00;
 	private Double wordnetStrippingSimilarity = 0.00;
 	private Integer numberOfRelations = 0;
+	private Integer numberOfAllRelations = 0;
+	private String detectedFor;
 	private boolean detected = false;
 
 	public Result(String name, METHOD_MAPPING_TYPE mappingType, METHOD_DETECTION_TYPE detectionType,
@@ -163,6 +165,22 @@ public class Result {
 
 	public void setNumberOfRelations(Integer numberOfRelations) {
 		this.numberOfRelations = numberOfRelations;
+	}
+
+	public Integer getNumberOfAllRelations() {
+		return numberOfAllRelations;
+	}
+
+	public void setNumberOfAllRelations(Integer numberOfAllRelations) {
+		this.numberOfAllRelations = numberOfAllRelations;
+	}
+
+	public String getDetectedFor() {
+		return detectedFor;
+	}
+
+	public void setDetectedFor(String detectedFor) {
+		this.detectedFor = detectedFor;
 	}
 
 }

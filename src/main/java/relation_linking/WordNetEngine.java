@@ -10,6 +10,7 @@ import net.didion.jwnl.JWNL;
 import net.didion.jwnl.JWNLException;
 import net.didion.jwnl.data.*;
 import net.didion.jwnl.dictionary.Dictionary;
+import relation_linking.RelationLinkingEngine.METHOD_DETECTION_TYPE;
 
 public class WordNetEngine {
 
@@ -21,7 +22,16 @@ public class WordNetEngine {
 	private QueryStrippingEngine qse = null;
 	private double similarity;
 
-	public WordNetEngine(String path, double similarity) throws JWNLException, ClassNotFoundException, IOException {
+	private static WordNetEngine instance = null;
+
+	public static WordNetEngine getInstance() {
+		if (instance != null)
+			return instance;
+		else
+			return new WordNetEngine();
+	}
+
+	public void init(String path, double similarity) throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine...");
 
 		if (wordnet == null) {
@@ -36,7 +46,7 @@ public class WordNetEngine {
 		this.similarity = similarity;
 	}
 
-	public WordNetEngine(String path, LexicalParsingEngine lpe, double similarity)
+	public void init(String path, LexicalParsingEngine lpe, double similarity)
 			throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine with lexical parser...");
 
@@ -54,7 +64,7 @@ public class WordNetEngine {
 		this.similarity = similarity;
 	}
 
-	public WordNetEngine(String path, OpenIEEngine openIE, double similarity)
+	public void init(String path, OpenIEEngine openIE, double similarity)
 			throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine with OpenIE...");
 
@@ -72,7 +82,7 @@ public class WordNetEngine {
 		this.similarity = similarity;
 	}
 
-	public WordNetEngine(String path, QueryStrippingEngine qse, double similarity)
+	public void init(String path, QueryStrippingEngine qse, double similarity)
 			throws JWNLException, ClassNotFoundException, IOException {
 		System.out.println("Initializing WordNet Search engine with lexical parser...");
 
@@ -255,40 +265,47 @@ public class WordNetEngine {
 		return getRelations(synsets, FreebaseSynsets);
 	}
 
-	public Map<String, Double> getRelations(String sentence) throws JWNLException {
+	public Map<String, Double> getRelations(String sentence, METHOD_DETECTION_TYPE methodType) throws JWNLException {
 		System.out.println("Getting WordNet relations...");
-
-		if (lpe != null)
-			return getLexicalizedRelations(sentence);
-
-		if (openIE != null)
-			return getOpenIERelations(sentence);
-
-		if (qse != null)
-			return getQueryStrippedRelations(sentence);
 
 		Map<String, Double> results = new HashMap<String, Double>();
 
-		Reader reader = new StringReader(sentence);
+		switch (methodType) {
+		case ALL: {
+			Reader reader = new StringReader(sentence);
 
-		for (Iterator<List<HasWord>> iterator = new DocumentPreprocessor(reader).iterator(); iterator.hasNext();) {
-			List<HasWord> word = iterator.next();
+			for (Iterator<List<HasWord>> iterator = new DocumentPreprocessor(reader).iterator(); iterator.hasNext();) {
+				List<HasWord> word = iterator.next();
 
-			for (int i = 0; i < word.size(); i++) {
-				String sWord = word.get(i).toString();
+				for (int i = 0; i < word.size(); i++) {
+					String sWord = word.get(i).toString();
 
-				ArrayList<String> synsets = getSynsetsFromWord(sWord);
+					ArrayList<String> synsets = getSynsetsFromWord(sWord);
 
-				Map<String, Double> relations = isDBPediaRelation(synsets);
-				if (relations != null) {
-					results.putAll(relations);
-				}
+					Map<String, Double> relations = isDBPediaRelation(synsets);
+					if (relations != null) {
+						results.putAll(relations);
+					}
 
-				relations = isFBCategory(synsets);
-				if (relations != null) {
-					results.putAll(relations);
+					relations = isFBCategory(synsets);
+					if (relations != null) {
+						results.putAll(relations);
+					}
 				}
 			}
+		}
+			break;
+		case OPENIE:
+			results.putAll(getOpenIERelations(sentence));
+			break;
+		case LEXICALPARSER:
+			results.putAll(getLexicalizedRelations(sentence));
+			break;
+		case QUERYSTRIPPING:
+			results.putAll(getQueryStrippedRelations(sentence));
+			break;
+		default:
+			break;
 		}
 
 		return results;

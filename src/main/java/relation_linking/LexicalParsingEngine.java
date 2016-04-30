@@ -33,9 +33,6 @@ public class LexicalParsingEngine {
 
 		for (List<HasWord> sentence : new DocumentPreprocessor(reader)) {
 			Tree parse = lp.apply(sentence);
-
-			System.out.println(parse.taggedYield());
-
 			if (gsf != null) {
 				GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
 				tdl = gs.allTypedDependencies();
@@ -80,7 +77,7 @@ public class LexicalParsingEngine {
 		ArrayList<String> nouns = new ArrayList<String>();
 
 		for (TaggedWord t : tw) {
-			if (t.tag().startsWith("N")){
+			if (t.tag().startsWith("N")) {
 				nouns.add(t.value());
 			}
 		}

@@ -6,6 +6,7 @@ import java.util.*;
 
 import edu.stanford.nlp.ling.HasWord;
 import edu.stanford.nlp.process.DocumentPreprocessor;
+import relation_linking.RelationLinkingEngine.METHOD_DETECTION_TYPE;
 import word2vec.*;
 
 public class GloVeEngine {
@@ -21,7 +22,16 @@ public class GloVeEngine {
 
 	private GloVeSpace model = null;
 
-	public GloVeEngine(String modelPath, double similarity, boolean allOverSimilarity) {
+	private static GloVeEngine instance = null;
+
+	public static GloVeEngine getInstance() {
+		if (instance != null)
+			return instance;
+		else
+			return new GloVeEngine();
+	}
+
+	public void init(String modelPath, double similarity, boolean allOverSimilarity) {
 
 		System.out.println("Initializing Glove search engine...");
 
@@ -37,7 +47,7 @@ public class GloVeEngine {
 		this.allOverSimilarity = allOverSimilarity;
 	}
 
-	public GloVeEngine(String modelPath, double similarity, LexicalParsingEngine lpe, boolean allOverSimilarity) {
+	public void init(String modelPath, double similarity, LexicalParsingEngine lpe, boolean allOverSimilarity) {
 		System.out.println("Initializing Glove search engine with lexical parser...");
 
 		if (model == null) {
@@ -54,7 +64,7 @@ public class GloVeEngine {
 		this.allOverSimilarity = allOverSimilarity;
 	}
 
-	public GloVeEngine(String modelPath, double similarity, OpenIEEngine openIE, boolean allOverSimilarity) {
+	public void init(String modelPath, double similarity, OpenIEEngine openIE, boolean allOverSimilarity) {
 		System.out.println("Initializing Glove search engine with OpenIE...");
 
 		if (model == null) {
@@ -71,7 +81,7 @@ public class GloVeEngine {
 		this.allOverSimilarity = allOverSimilarity;
 	}
 
-	public GloVeEngine(String modelPath, double similarity, QueryStrippingEngine qse, boolean allOverSimilarity) {
+	public void init(String modelPath, double similarity, QueryStrippingEngine qse, boolean allOverSimilarity) {
 		System.out.println("Initializing Glove search engine with Query stripping...");
 
 		if (model == null) {
@@ -140,48 +150,55 @@ public class GloVeEngine {
 		return getComposedRelations(words);
 	}
 
-	public Map<String, Double> getRelations(String sentence) {
+	public Map<String, Double> getRelations(String sentence, METHOD_DETECTION_TYPE methodType) {
 		System.out.println("Getting glove relations...");
-
-		if (lpe != null)
-			return getLexicalizedRelations(sentence);
-
-		if (openIE != null)
-			return getOpenIERelations(sentence);
-
-		if (qse != null)
-			return getStrippedRelations(sentence);
 
 		Map<String, Double> results = new HashMap<String, Double>();
 
-		Reader reader = new StringReader(sentence);
+		switch (methodType) {
+		case ALL: {
+			Reader reader = new StringReader(sentence);
 
-		for (Iterator<List<HasWord>> iterator = new DocumentPreprocessor(reader).iterator(); iterator.hasNext();) {
-			List<HasWord> word = iterator.next();
+			for (Iterator<List<HasWord>> iterator = new DocumentPreprocessor(reader).iterator(); iterator.hasNext();) {
+				List<HasWord> word = iterator.next();
 
-			for (int i = 0; i < word.size(); i++) {
-				String sWord = word.get(i).toString();
+				for (int i = 0; i < word.size(); i++) {
+					String sWord = word.get(i).toString();
 
-				Map<String, Double> relations = isDBPediaRelation(sWord);
-				if (relations != null) {
-					results.putAll(relations);
-				}
+					Map<String, Double> relations = isDBPediaRelation(sWord);
+					if (relations != null) {
+						results.putAll(relations);
+					}
 
-				relations = isFBCategory(sWord);
-				if (relations != null) {
-					results.putAll(relations);
-				}
+					relations = isFBCategory(sWord);
+					if (relations != null) {
+						results.putAll(relations);
+					}
 
-				relations = isInComposedDBPediaRelations(sWord);
-				if (relations != null) {
-					results.putAll(relations);
-				}
+					relations = isInComposedDBPediaRelations(sWord);
+					if (relations != null) {
+						results.putAll(relations);
+					}
 
-				relations = isInComposedFBRelations(sWord);
-				if (relations != null) {
-					results.putAll(relations);
+					relations = isInComposedFBRelations(sWord);
+					if (relations != null) {
+						results.putAll(relations);
+					}
 				}
 			}
+		}
+			break;
+		case OPENIE:
+			results.putAll(getOpenIERelations(sentence));
+			break;
+		case LEXICALPARSER:
+			results.putAll(getLexicalizedRelations(sentence));
+			break;
+		case QUERYSTRIPPING:
+			results.putAll(getStrippedRelations(sentence));
+			break;
+		default:
+			break;
 		}
 
 		return results;
