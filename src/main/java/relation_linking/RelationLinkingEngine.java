@@ -31,9 +31,9 @@ public class RelationLinkingEngine {
 
 	private double similarity = 0.1;
 
-	private boolean onlyTrain = true;
+	private boolean onlyTrain = false;
 
-	private String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
+	private String datasetPath = "webquestionsRelation.json";
 	private String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
 	private String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.300d.txt";
 	private String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
