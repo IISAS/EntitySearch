@@ -1,7 +1,6 @@
 package DP_entity_linking.geneticAlgorithm.similarity;
 
 import DP_entity_linking.geneticAlgorithm.GenSequence;
-import DP_entity_linking.geneticAlgorithm.Interval;
 import org.apache.lucene.search.similarities.LMDirichletSimilarity;
 import org.apache.lucene.search.similarities.Similarity;
 
@@ -10,11 +9,11 @@ import java.util.Random;
 /**
  * Created by miroslav.kudlac on 4/5/2016.
  */
-public class Dirichlet implements GenSequence {
-    private Interval value;
+public class Dirichlet implements GenSequence<Similarity> {
+    private Similarity dirichlet;
 
     public Dirichlet() {
-
+        dirichlet = new LMDirichletSimilarity();
     }
 
     @Override
@@ -27,6 +26,18 @@ public class Dirichlet implements GenSequence {
 
     @Override
     public Similarity get() {
-        return new LMDirichletSimilarity();
+        return dirichlet;
+    }
+
+    @Override
+    public GenSequence<Similarity> clone() {
+        return new Dirichlet();
+    }
+
+    @Override
+    public String toString() {
+        return "Dirichlet{" +
+                "dirichlet=" + dirichlet +
+                '}';
     }
 }

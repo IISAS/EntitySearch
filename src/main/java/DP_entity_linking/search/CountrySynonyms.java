@@ -11,7 +11,7 @@ import java.util.Locale;
  * Created by miroslav.kudlac on 10/4/2015.
  */
 public class CountrySynonyms {
-    private static String FILE_NAME = "src/main/resources/data/substitution_map.txt";
+    private static String FILE_NAME = "data/data/substitution_map.txt";
 
     public static SynonymMap buildMap() throws IOException {
         LineReader lr = new LineReader(FILE_NAME);

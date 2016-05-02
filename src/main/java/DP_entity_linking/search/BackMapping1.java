@@ -37,8 +37,8 @@ public class BackMapping1 implements BackMappingInterface{
                 }
                 s = s.replaceAll("[^a-zA-Z0-9]+"," ").trim();
                 contains = query.toLowerCase().matches(".*\\b" + s.toLowerCase() + "\\b.*");
-                if (contains) {
                     string_count++;
+                    if (contains) {
                     result = result + " " + s;
                 }
             }

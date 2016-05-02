@@ -2,89 +2,52 @@ package DP_entity_linking;
 
 import DP_entity_linking.dataset.DataSet;
 import DP_entity_linking.dataset.Record;
-import DP_entity_linking.geneticAlgorithm.Chromosome;
-import DP_entity_linking.search.*;
+import DP_entity_linking.geneticAlgorithm.GeneticClass;
+import DP_entity_linking.search.Configuration;
+import DP_entity_linking.search.DefaultConfiguration;
+import DP_entity_linking.search.ResultPreprocessing;
+import DP_entity_linking.search.Search;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Random;
-
 /**
  * Created by miroslav.kudlac on 11/22/2015.
  */
 public class Main {
     private static Logger LOGGER = Logger.getLogger(Main.class);
-    /**
-     * Call retrieveRecords and write to log
-     * @throws IOException
-     */
-    public void doJob(Random randnum) throws IOException, ParseException {
-        // Spracuj dataset
+
+
+    public void normalStart() throws IOException, ParseException {
         DataSet dataset = new DataSet("C:\\workspace\\webquestions.json");
         List<Record> records = dataset.loadWebquestions();
-        records = records.subList(0, 3700);
+        //records = records.subList(0, 3700);
+        records = records.subList(0, 5);
         Configuration conf;
-        Configuration bestConf = null;
         ResultPreprocessing result = new ResultPreprocessing();
-
-        // Configuration via chromozom
-        Chromosome chromosome = new Chromosome();
-
-        // Defaultna konfiguracia
         conf = new DefaultConfiguration();
+        Search search = new Search();
+        search.start();
 
-        int bestFitnes = 0;
-        int countBM = 0;
-        //for (int i = 0; i < 100; i++) {
-            boolean confFound = false;
-            //chromosome.create(randnum);
-            //conf = chromosome.get();
-            Search search = new Search();
-            search.start();
-            //FinalSearch finalSearch = new FinalSearch();
-
-            //List<String> finalAnswer = finalSearch.processRecord("what did darry look like", null);
-            //List<List<String>> f = result.results("what did darry look like", finalAnswer);
-            //LOGGER.info("+++++++++++++++++" + f + "++++++++++==");
-
-            //LOGGER.info("CONF: " + conf);
-
-            for (Record record : records) {
-                LOGGER.info("------------" + record.getUtterance() + "--------------");
-                List<String> a = search.processRecord(record, conf);
-                if (a.size() > 0) {
-                    List<List<String>> finalResultPreprocessed = result.results(record.getQuestion(), a);
-                    LOGGER.info("+++++++++++++++++" + finalResultPreprocessed + "++++++++++==");
-                } else {
-                   LOGGER.info("NOT FOUND!");
-                }
-
+        for (Record record : records) {
+            LOGGER.info("------------" + record.getUtterance() + "--------------");
+            List<Document> a = search.processRecord(record, conf);
+            for(int i = 0; i < a.size(); i++) {
+                LOGGER.info(a.get(i).get("title"));
             }
-
-            int fitness = search.getScore();
-            LOGGER.warn("NEW BESTFITNESS: " + Integer.toString(fitness));
-        /*if (bestFitnes <= fitness) {
-                bestFitnes = fitness;
-                bestConf = conf;
-                countBM = search.getCountBackMapped();
-                if (search.getCountBackMapped() > countBM) {
-                    confFound = true;
-                }
-                LOGGER.warn(i + " NEW CONF: " + bestConf);
-                LOGGER.warn("NEW BESTFITNESS: " + Integer.toString(bestFitnes));
-            }
-            if (confFound) {
-                LOGGER.warn(i + " NEW BESTCONF WITH BEST POSSIBLE BACKMAPPING: " + bestConf);
+            if (a.size() > 0) {
+                List<List<String>> finalResultPreprocessed = result.results(record.getQuestion(), a);
+                LOGGER.info("+++++++++++++++++" + finalResultPreprocessed + "++++++++++==");
             } else {
-
+                LOGGER.info("NOT FOUND");
             }
-        }*/
-
-        //int fitness = search.getScore();
-        //LOGGER.info("------------" + Integer.toString(fitness) + "--------------");
+        }
+        int fitness = search.getScore();
+        LOGGER.info(fitness);
     }
 
 
@@ -94,13 +57,21 @@ public class Main {
      */
     public static void main(String[] args) throws IOException, ParseException {
 
-        PropertyConfigurator.configure("log4j.properties");
+        PropertyConfigurator.configure("data/log4j.properties");
         Random randnum = new Random();
         randnum.setSeed(123456789);
+        GeneticClass geneticSolution = new GeneticClass(randnum);
+
+        /*
+         for(int i=0; i < 500; i++) {
+             System.out.println(randnum.nextFloat());
+         }
+        */
 
         try {
             Main app = new Main();
-            app.doJob(randnum);
+            //geneticSolution.doJob();
+            app.normalStart();
 
         } catch (IOException ex) {
             LOGGER.error(" error: ", ex);

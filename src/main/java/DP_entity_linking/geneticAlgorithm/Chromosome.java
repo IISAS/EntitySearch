@@ -14,13 +14,35 @@ import java.util.Random;
 /**
  * Created by miroslav.kudlac on 11/9/2015.
  */
-public final class Chromosome implements GenSequence<Configuration>, Serializable {
+public class Chromosome implements GenSequence<Configuration>, Serializable, Cloneable {
 
-    private GenSequence<Map<String, Float>> fields;
-    private GenSequence<Similarity> similarity;
-    private GenSequence<Similarity> bm;
-    private GenSequence<Similarity> dir;
-    private GenSequence<Similarity> def;
+
+    protected GenSequence<Map<String, Float>> fields;
+    protected GenSequence<Similarity> similarity;
+    protected GenSequence<Similarity> bm;
+    protected GenSequence<Similarity> dir;
+    protected GenSequence<Similarity> def;
+    private int fitness;
+
+
+    public int getFitness() {
+        return fitness;
+    }
+
+    public void setFitness(int fitness) {
+        this.fitness = fitness;
+    }
+
+    public GenSequence<Configuration> clone() {
+        Chromosome ch = new Chromosome();
+        ch.fields = this.fields.clone();
+        ch.similarity = this.similarity.clone();
+        ch.bm = this.bm.clone();
+        ch.dir = this.dir.clone();
+        ch.def = this.def.clone();
+        return ch;
+    }
+
     public Chromosome() {
         fields = new BoostParameters();
         similarity = new LmJelink();
@@ -50,8 +72,8 @@ public final class Chromosome implements GenSequence<Configuration>, Serializabl
     @Override
     public Configuration get() {
         Configuration conf = new Configuration();
-        conf.setBoost( fields.get() );
-        Similarity[] sims = new Similarity[]{ similarity.get(), bm.get(), def.get(), dir.get()};
+        conf.setBoost(fields.get());
+        Similarity[] sims = new Similarity[]{similarity.get(), bm.get(), def.get(), dir.get()};
         conf.setSims(sims);
         return conf;
     }
@@ -74,6 +96,12 @@ public final class Chromosome implements GenSequence<Configuration>, Serializabl
         return "Chromosome{" +
                 "fields=" + fields +
                 ", similarity=" + similarity +
+                ", bm=" + bm +
+                ", dir=" + dir +
+                ", def=" + def +
+                ", fitness=" + fitness +
                 '}';
     }
+
+
 }

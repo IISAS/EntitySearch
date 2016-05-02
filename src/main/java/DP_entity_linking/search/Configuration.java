@@ -13,6 +13,15 @@ public class Configuration {
     private Similarity[] sims;
     private int numSearchRes = 20;
 
+    @Override
+    public String toString() {
+        return "Configuration{" +
+                "boost=" + boost +
+                ", sims=" + Arrays.toString(sims) +
+                ", numSearchRes=" + numSearchRes +
+                '}';
+    }
+
     public Configuration() {
     }
 
@@ -40,12 +49,4 @@ public class Configuration {
         this.numSearchRes = numSearchRes;
     }
 
-    @Override
-    public String toString() {
-        return "Chromozon{" +
-                "boost=" + boost +
-                ", sims=" + Arrays.toString(sims) +
-                ", numSearchRes=" + numSearchRes +
-                '}';
-    }
 }

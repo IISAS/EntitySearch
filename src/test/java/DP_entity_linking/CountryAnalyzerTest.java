@@ -61,7 +61,7 @@ public class CountryAnalyzerTest {
     @Test
     public void testCreateComponents() throws Exception {
         Analyzer analyzer = new MyAnalyzer();
-        Directory directory =  new MMapDirectory(new File("/workspace/erd/index_wikipedia"));
+        Directory directory =  new MMapDirectory(new File("data/index_wikipedia"));
         IndexSearcher indexSearcher = new IndexSearcher(IndexReader.open(directory));
         //indexSearcher.setSimilarity(new LMJelinekMercerSimilarity((float) 0.1));
         //indexSearcher.setSimilarity(new BM25Similarity());
