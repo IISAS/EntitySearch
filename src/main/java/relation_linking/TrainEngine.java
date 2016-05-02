@@ -10,7 +10,7 @@ public class TrainEngine {
 
 	public TrainEngine(String trainFilePath, String testFilePath, String resultFilePath) throws IOException, InterruptedException {
 		System.out.println("Starting conversion...");
-		Process p = Runtime.getRuntime().exec("python ppp_vw_2_lsvm.py --input " +trainFilePath + "--out " +resultFilePath);
+		Process p = Runtime.getRuntime().exec("python src/main/resources/data/ppp_vw_2_lsvm.py --input " +trainFilePath + "--out " +resultFilePath);
 		p.waitFor();
 		System.out.println("Conversion finished...");
 	}

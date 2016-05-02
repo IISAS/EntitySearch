@@ -33,17 +33,18 @@ public class RelationLinkingEngine {
 
 	private boolean onlyTrain = false;
 
-	private String datasetPath = "webquestionsRelation.json";
-	private String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
+	private String datasetPath = "src/main/resources/data/webquestionsRelation.json";
+	private String dbPediaOntologyPath = "src/main/resources/data/dbpedia_2015-04.nt";
 	private String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.300d.txt";
 	private String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
+	private String JWNLPropertiesPath = "src/main/resources/data/file_properties.xml";
+	private String entitySearchResultsFilePath = "src/main/resources/data/resultsWebquestions.txt";
+	
 	private String csvOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
 	private String trainOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/trainSet";
 	private String testOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/testSet";
 	private String xgBoostOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/xgBoost";
-	private String JWNLPropertiesPath = "file_properties.xml";
-	private String entitySearchResultsFilePath = "/Users/fjuras/OneDriveBusiness/DPResources/resultsWebquestions.txt";
-
+	
 	private String outputUtteranceKey = "utterance";
 	private String outputRelationKey = "relation";
 	private String outputDetectedKey = "detected";

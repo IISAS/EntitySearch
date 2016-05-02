@@ -18,11 +18,11 @@ public class QueryStrippingEngine {
 
 	@SuppressWarnings("unchecked")
 	private void getEntities() throws FileNotFoundException, IOException, ClassNotFoundException {
-		File entitiesFile = new File("entitiesStore");
+		File entitiesFile = new File("src/main/resources/data/entitiesStore");
 		entities = new HashMap<String, String>();
 
 		if (entitiesFile.exists()) {
-			ObjectInputStream ois = new ObjectInputStream(new FileInputStream("entitiesStore"));
+			ObjectInputStream ois = new ObjectInputStream(new FileInputStream("src/main/resources/data/entitiesStore"));
 			entities = (Map<String, String>) ois.readObject();
 			ois.close();
 		} else {
@@ -39,7 +39,7 @@ public class QueryStrippingEngine {
 					}
 				}
 			}
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("entitiesStore"));
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("src/main/resources/data/entitiesStore"));
 			oos.writeObject(entities);
 			oos.flush();
 			oos.close();
@@ -66,7 +66,7 @@ public class QueryStrippingEngine {
 		}
 
 		StopWords stopWords = new StopWords(
-				new File("/Users/fjuras/EntitySearch/src/main/resources/data/stop-words_long.txt"));
+				new File("src/main/resources/data/stop-words_long.txt"));
 		Set<String> stopW = stopWords.getStopWords();
 
 		ArrayList<String> copy = new ArrayList<String>(listOfWords);

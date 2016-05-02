@@ -25,7 +25,7 @@ public class FBCategoriesExtractor {
 
 		System.out.println("Initializing FBCategories extractor...");
 		
-		File fbStore = new File("FBStore");
+		File fbStore = new File("src/main/resources/data/FBStore");
 		if (!fbStore.exists() || fbStore.isDirectory()) {
 	        Directory directory = new MMapDirectory(new File("/workspace/erd/index_wikipedia"));
 			@SuppressWarnings("deprecation")
@@ -43,12 +43,12 @@ public class FBCategoriesExtractor {
 					}
 			}
 
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("FBStore"));
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("src/main/resources/data/FBStore"));
 			oos.writeObject(fbCategories);
 			oos.flush();
 			oos.close();
 		} else {
-			ObjectInputStream ois = new ObjectInputStream(new FileInputStream("FBStore"));
+			ObjectInputStream ois = new ObjectInputStream(new FileInputStream("src/main/resources/data/FBStore"));
 			fbCategories = (ArrayList<String>) ois.readObject();
 			ois.close();
 		}

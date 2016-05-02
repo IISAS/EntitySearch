@@ -158,13 +158,13 @@ public class WordNetEngine {
 	private Map<String, ArrayList<String>> getSynsetsForDBPedia()
 			throws JWNLException, FileNotFoundException, IOException, ClassNotFoundException {
 		System.out.println("Getting synsets for DBPedia...");
-		return getSynsets("DBPediaSynsets", false);
+		return getSynsets("src/main/resources/data/DBPediaSynsets", false);
 	}
 
 	private Map<String, ArrayList<String>> getSynsetsForFreebase()
 			throws FileNotFoundException, ClassNotFoundException, JWNLException, IOException {
 		System.out.println("Getting synsets for Freebase...");
-		return getSynsets("FreebaseSynsets", true);
+		return getSynsets("src/main/resources/data/FreebaseSynsets", true);
 	}
 
 	private Map<String, Double> getLexicalizedRelations(String sentence) throws JWNLException {

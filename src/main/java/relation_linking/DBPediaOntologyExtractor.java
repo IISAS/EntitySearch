@@ -14,7 +14,7 @@ public class DBPediaOntologyExtractor {
 
 		System.out.println("Initializing DBPedia Ontology extractor...");
 		
-		File dbPediaStore = new File("DBPediaStore");
+		File dbPediaStore = new File("src/main/resources/data/DBPediaStore");
 
 		if (!dbPediaStore.exists() || dbPediaStore.isDirectory()) {
 			try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
@@ -31,12 +31,12 @@ public class DBPediaOntologyExtractor {
 				}
 			}
 			
-			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("DBPediaStore"));
+			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("src/main/resources/data/DBPediaStore"));
 			oos.writeObject(listOfRelations);
 			oos.flush();
 			oos.close();
 		} else {
-			ObjectInputStream ois = new ObjectInputStream(new FileInputStream("DBPediaStore"));
+			ObjectInputStream ois = new ObjectInputStream(new FileInputStream("src/main/resources/data/DBPediaStore"));
 			listOfRelations = (ArrayList<String>) ois.readObject();
 			ois.close();
 		}
