@@ -31,12 +31,16 @@ public class RelationLinkingEngine {
 
 	private double similarity = 0.1;
 
+	private boolean onlyTrain = true;
+
 	private String datasetPath = "/Users/fjuras/OneDriveBusiness/DPResources/webquestionsRelation.json";
 	private String dbPediaOntologyPath = "/Users/fjuras/OneDriveBusiness/DPResources/dbpedia_2015-04.nt";
 	private String gloveModelPath = "/Users/fjuras/OneDriveBusiness/DPResources/glove.6B/glove.6B.300d.txt";
 	private String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
 	private String csvOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
 	private String trainOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/trainSet";
+	private String testOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/testSet";
+	private String xgBoostOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/xgBoost";
 	private String JWNLPropertiesPath = "file_properties.xml";
 	private String entitySearchResultsFilePath = "/Users/fjuras/OneDriveBusiness/DPResources/resultsWebquestions.txt";
 
@@ -72,6 +76,7 @@ public class RelationLinkingEngine {
 
 	private FileWriter csvOutput;
 	private FileWriter trainOutput;
+	private FileWriter testOutput;
 
 	private DirectSearchEngine dse = null;
 	private GloVeEngine glove = null;
@@ -80,135 +85,151 @@ public class RelationLinkingEngine {
 	public RelationLinkingEngine() {
 	}
 
-	public static void main(String[] args) throws ClassNotFoundException, IOException, JWNLException {
+	public static void main(String[] args)
+			throws ClassNotFoundException, IOException, JWNLException, InterruptedException {
 
 		RelationLinkingEngine rle = new RelationLinkingEngine();
 		rle.runDetection();
 	}
 
-	private void runDetection() throws IOException, ClassNotFoundException, JWNLException {
-		System.out.println("Reading dataset...");
-		DataSet dataset = new DataSet(datasetPath);
-		List<Record> records = dataset.loadWebquestions();
+	private void runDetection() throws IOException, ClassNotFoundException, JWNLException, InterruptedException {
+		if (!onlyTrain) {
+			System.out.println("Reading dataset...");
+			DataSet dataset = new DataSet(datasetPath);
+			List<Record> records = dataset.loadWebquestions();
 
-		csvOutput = new FileWriter(csvOutputPath);
-		trainOutput = new FileWriter(trainOutputPath);
-		printCSVRow(outputUtteranceKey, outputRelationKey, outputDirectKey, outputGloveLexicalKey, outputGloveOpenIEKey,
-				outputGloveStrippingKey, outputGloveAllKey, outputWordNetLexicalKey, outputWordNetOpenIEKey,
-				outputWordNetStrippingKey, outputWordNetAllKey, outputDetectedKey, outputDetectedRelationsKey,
-				outputFoundRelationsKey, outputFromDetectedKey, outputDetectedForKey, outputFromDetectedAllKey);
+			csvOutput = new FileWriter(csvOutputPath);
+			trainOutput = new FileWriter(trainOutputPath);
+			testOutput = new FileWriter(testOutputPath);
+			printCSVRow(outputUtteranceKey, outputRelationKey, outputDirectKey, outputGloveLexicalKey,
+					outputGloveOpenIEKey, outputGloveStrippingKey, outputGloveAllKey, outputWordNetLexicalKey,
+					outputWordNetOpenIEKey, outputWordNetStrippingKey, outputWordNetAllKey, outputDetectedKey,
+					outputDetectedRelationsKey, outputFoundRelationsKey, outputFromDetectedKey, outputDetectedForKey,
+					outputFromDetectedAllKey);
 
-		doe = new DBPediaOntologyExtractor(dbPediaOntologyPath);
-		fce = new FBCategoriesExtractor();
+			doe = new DBPediaOntologyExtractor(dbPediaOntologyPath);
+			fce = new FBCategoriesExtractor();
 
-		LexicalParsingEngine lpe = null;
-		OpenIEEngine openIE = null;
-		QueryStrippingEngine qse = null;
-		if (withLexicalParser)
-			lpe = new LexicalParsingEngine(lexicalParserModel);
-		if (withOpenIE)
-			openIE = new OpenIEEngine();
-		if (withQueryStripping)
-			qse = new QueryStrippingEngine(entitySearchResultsFilePath);
-
-		if (directCheck)
-			dse = new DirectSearchEngine();
-
-		if (checkGlove) {
-			glove = GloVeEngine.getInstance();
-			if (withLexicalParser) {
-				glove.init(gloveModelPath, similarity, lpe, allOverSimilarity);
-			}
-			if (withOpenIE) {
-				glove.init(gloveModelPath, similarity, openIE, allOverSimilarity);
-			}
-			if (withQueryStripping) {
-				glove.init(gloveModelPath, similarity, qse, allOverSimilarity);
-			}
-			if (withEveryWord) {
-				glove.init(gloveModelPath, similarity, allOverSimilarity);
-			}
-		}
-
-		if (checkWordNet) {
-			wordnet = WordNetEngine.getInstance();
-			if (withLexicalParser) {
-				wordnet.init(JWNLPropertiesPath, lpe, similarity);
-			}
-			if (withOpenIE) {
-				wordnet.init(JWNLPropertiesPath, openIE, similarity);
-			}
-			if (withQueryStripping) {
-				wordnet.init(JWNLPropertiesPath, qse, similarity);
-			}
-
-			if (withEveryWord) {
-				wordnet.init(JWNLPropertiesPath, similarity);
-			}
-		}
-
-		for (Record record : records) {
-			System.out.println("Processing utterance: " + record.getUtterance());
-
-			Map<String, Result> results = new HashMap<String, Result>();
+			LexicalParsingEngine lpe = null;
+			OpenIEEngine openIE = null;
+			QueryStrippingEngine qse = null;
+			if (withLexicalParser)
+				lpe = new LexicalParsingEngine(lexicalParserModel);
+			if (withOpenIE)
+				openIE = new OpenIEEngine();
+			if (withQueryStripping)
+				qse = new QueryStrippingEngine(entitySearchResultsFilePath);
 
 			if (directCheck)
-				results.putAll(addFoundRelations(dse.getRelations(record.getUtterance()), results,
-						METHOD_MAPPING_TYPE.DIRECT, null, record));
+				dse = new DirectSearchEngine();
 
 			if (checkGlove) {
+				glove = GloVeEngine.getInstance();
 				if (withLexicalParser) {
-					results.putAll(addFoundRelations(
-							glove.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.LEXICALPARSER), results,
-							METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.LEXICALPARSER, record));
+					glove.init(gloveModelPath, similarity, lpe, allOverSimilarity);
 				}
 				if (withOpenIE) {
-					results.putAll(
-							addFoundRelations(glove.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.OPENIE),
-									results, METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.OPENIE, record));
+					glove.init(gloveModelPath, similarity, openIE, allOverSimilarity);
 				}
 				if (withQueryStripping) {
-					results.putAll(addFoundRelations(
-							glove.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.QUERYSTRIPPING), results,
-							METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.QUERYSTRIPPING, record));
+					glove.init(gloveModelPath, similarity, qse, allOverSimilarity);
 				}
-
 				if (withEveryWord) {
-					results.putAll(
-							addFoundRelations(glove.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.ALL),
-									results, METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.ALL, record));
+					glove.init(gloveModelPath, similarity, allOverSimilarity);
 				}
 			}
+
 			if (checkWordNet) {
+				wordnet = WordNetEngine.getInstance();
 				if (withLexicalParser) {
-					results.putAll(addFoundRelations(
-							wordnet.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.LEXICALPARSER), results,
-							METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.LEXICALPARSER, record));
+					wordnet.init(JWNLPropertiesPath, lpe, similarity);
 				}
 				if (withOpenIE) {
-					results.putAll(
-							addFoundRelations(wordnet.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.OPENIE),
-									results, METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.OPENIE, record));
+					wordnet.init(JWNLPropertiesPath, openIE, similarity);
 				}
 				if (withQueryStripping) {
-					results.putAll(addFoundRelations(
-							wordnet.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.QUERYSTRIPPING), results,
-							METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.QUERYSTRIPPING, record));
+					wordnet.init(JWNLPropertiesPath, qse, similarity);
 				}
 
 				if (withEveryWord) {
-					results.putAll(
-							addFoundRelations(wordnet.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.ALL),
-									results, METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.ALL, record));
+					wordnet.init(JWNLPropertiesPath, similarity);
 				}
 			}
 
-			printFoundRelations(results, record.getUtterance());
+			int r = 0;
+			for (Record record : records) {
+				System.out.println("Processing utterance: " + record.getUtterance());
 
+				Map<String, Result> results = new HashMap<String, Result>();
+
+				if (directCheck)
+					results.putAll(addFoundRelations(dse.getRelations(record.getUtterance()), results,
+							METHOD_MAPPING_TYPE.DIRECT, null, record));
+
+				if (checkGlove) {
+					if (withLexicalParser) {
+						results.putAll(addFoundRelations(
+								glove.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.LEXICALPARSER), results,
+								METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.LEXICALPARSER, record));
+					}
+					if (withOpenIE) {
+						results.putAll(addFoundRelations(
+								glove.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.OPENIE), results,
+								METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.OPENIE, record));
+					}
+					if (withQueryStripping) {
+						results.putAll(addFoundRelations(
+								glove.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.QUERYSTRIPPING),
+								results, METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.QUERYSTRIPPING, record));
+					}
+
+					if (withEveryWord) {
+						results.putAll(
+								addFoundRelations(glove.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.ALL),
+										results, METHOD_MAPPING_TYPE.GLOVE, METHOD_DETECTION_TYPE.ALL, record));
+					}
+				}
+				if (checkWordNet) {
+					if (withLexicalParser) {
+						results.putAll(addFoundRelations(
+								wordnet.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.LEXICALPARSER),
+								results, METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.LEXICALPARSER, record));
+					}
+					if (withOpenIE) {
+						results.putAll(addFoundRelations(
+								wordnet.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.OPENIE), results,
+								METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.OPENIE, record));
+					}
+					if (withQueryStripping) {
+						results.putAll(addFoundRelations(
+								wordnet.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.QUERYSTRIPPING),
+								results, METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.QUERYSTRIPPING, record));
+					}
+
+					if (withEveryWord) {
+						results.putAll(addFoundRelations(
+								wordnet.getRelations(record.getUtterance(), METHOD_DETECTION_TYPE.ALL), results,
+								METHOD_MAPPING_TYPE.WORDNET, METHOD_DETECTION_TYPE.ALL, record));
+					}
+				}
+
+				if (r < 3 * records.size() / 4) {
+					printFoundRelations(results, record.getUtterance(), trainOutput);
+				} else {
+					printFoundRelations(results, record.getUtterance(), testOutput);
+				}
+
+				r++;
+			}
+
+			csvOutput.flush();
+			csvOutput.close();
+			trainOutput.flush();
+			trainOutput.close();
+			testOutput.flush();
+			testOutput.close();
 		}
-
-		csvOutput.flush();
-		trainOutput.close();
+		TrainEngine te = new TrainEngine(trainOutputPath, testOutputPath, xgBoostOutputPath);
 	}
 
 	private void printCSVRow(String utteranceValue, String relationValue, String directValue, String gloveLexicalValue,
@@ -255,55 +276,55 @@ public class RelationLinkingEngine {
 
 	private void printTrainRow(boolean found, String relationName, Double direct, Double gloveLexical,
 			Double gloveOpenIE, Double gloveStripping, Double gloveAll, Double wordnetLexical, Double wordnetOpenIE,
-			Double wordnetStripping, Double wordnetAll) throws IOException {
+			Double wordnetStripping, Double wordnetAll, FileWriter output) throws IOException {
 
 		DecimalFormat formatter = new DecimalFormat("#0.00");
 
 		if (found)
-			trainOutput.append(outputTrueValue);
+			output.append(outputTrueValue);
 		else
-			trainOutput.append(outputNotFoundValue);
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputCategory);
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(relationName);
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputDirectKey);
-		trainOutput.append(outputTrainValueSeparator);
-		trainOutput.append(formatter.format(direct));
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputGloveLexicalKey);
-		trainOutput.append(outputTrainValueSeparator);
-		trainOutput.append(formatter.format(gloveLexical));
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputGloveOpenIEKey);
-		trainOutput.append(outputTrainValueSeparator);
-		trainOutput.append(formatter.format(gloveOpenIE));
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputGloveStrippingKey);
-		trainOutput.append(outputTrainValueSeparator);
-		trainOutput.append(formatter.format(gloveStripping));
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputGloveAllKey);
-		trainOutput.append(outputTrainValueSeparator);
-		trainOutput.append(formatter.format(gloveAll));
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputWordNetLexicalKey);
-		trainOutput.append(outputTrainValueSeparator);
-		trainOutput.append(formatter.format(wordnetLexical));
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputWordNetOpenIEKey);
-		trainOutput.append(outputTrainValueSeparator);
-		trainOutput.append(formatter.format(wordnetOpenIE));
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputWordNetStrippingKey);
-		trainOutput.append(outputTrainValueSeparator);
-		trainOutput.append(formatter.format(wordnetStripping));
-		trainOutput.append(outputTrainSeparator);
-		trainOutput.append(outputWordNetAllKey);
-		trainOutput.append(outputTrainValueSeparator);
-		trainOutput.append(formatter.format(wordnetAll));
-		trainOutput.append(outputNewLine);
+			output.append(outputNotFoundValue);
+		output.append(outputTrainSeparator);
+		output.append(outputCategory);
+		output.append(outputTrainSeparator);
+		output.append(relationName);
+		output.append(outputTrainSeparator);
+		output.append(outputDirectKey);
+		output.append(outputTrainValueSeparator);
+		output.append(formatter.format(direct));
+		output.append(outputTrainSeparator);
+		output.append(outputGloveLexicalKey);
+		output.append(outputTrainValueSeparator);
+		output.append(formatter.format(gloveLexical));
+		output.append(outputTrainSeparator);
+		output.append(outputGloveOpenIEKey);
+		output.append(outputTrainValueSeparator);
+		output.append(formatter.format(gloveOpenIE));
+		output.append(outputTrainSeparator);
+		output.append(outputGloveStrippingKey);
+		output.append(outputTrainValueSeparator);
+		output.append(formatter.format(gloveStripping));
+		output.append(outputTrainSeparator);
+		output.append(outputGloveAllKey);
+		output.append(outputTrainValueSeparator);
+		output.append(formatter.format(gloveAll));
+		output.append(outputTrainSeparator);
+		output.append(outputWordNetLexicalKey);
+		output.append(outputTrainValueSeparator);
+		output.append(formatter.format(wordnetLexical));
+		output.append(outputTrainSeparator);
+		output.append(outputWordNetOpenIEKey);
+		output.append(outputTrainValueSeparator);
+		output.append(formatter.format(wordnetOpenIE));
+		output.append(outputTrainSeparator);
+		output.append(outputWordNetStrippingKey);
+		output.append(outputTrainValueSeparator);
+		output.append(formatter.format(wordnetStripping));
+		output.append(outputTrainSeparator);
+		output.append(outputWordNetAllKey);
+		output.append(outputTrainValueSeparator);
+		output.append(formatter.format(wordnetAll));
+		output.append(outputNewLine);
 	}
 
 	private int getNumberOfDetected(Map<String, Result> results) {
@@ -320,7 +341,8 @@ public class RelationLinkingEngine {
 		return bool ? outputTrueValue : outputFalseValue;
 	}
 
-	private void printFoundRelations(Map<String, Result> results, String utterance) throws IOException {
+	private void printFoundRelations(Map<String, Result> results, String utterance, FileWriter output)
+			throws IOException {
 		System.out.println("Printing relations...");
 
 		int numberOfDetected = getNumberOfDetected(results);
@@ -351,7 +373,7 @@ public class RelationLinkingEngine {
 						result.getGloveLexicalParserSimilarity(), result.getGloveOpenIESimilarity(),
 						result.getGloveStrippingSimilarity(), result.getGloveAllSimilarity(),
 						result.getWordnetLexicalParserSimilarity(), result.getWordnetOpenIESimilarity(),
-						result.getWordnetStrippingSimilarity(), result.getWordnetAllSimilarity());
+						result.getWordnetStrippingSimilarity(), result.getWordnetAllSimilarity(), output);
 			}
 		}
 	}
