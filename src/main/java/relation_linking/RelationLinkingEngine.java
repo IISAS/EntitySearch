@@ -39,12 +39,11 @@ public class RelationLinkingEngine {
 	private String lexicalParserModel = "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz";
 	private String JWNLPropertiesPath = "src/main/resources/data/file_properties.xml";
 	private String entitySearchResultsFilePath = "src/main/resources/data/resultsWebquestions.txt";
-	
+
 	private String csvOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/Relations.csv";
 	private String trainOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/trainSet";
 	private String testOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/testSet";
-	private String xgBoostOutputPath = "/Users/fjuras/OneDriveBusiness/DPResources/xgBoost";
-	
+
 	private String outputUtteranceKey = "utterance";
 	private String outputRelationKey = "relation";
 	private String outputDetectedKey = "detected";
@@ -159,7 +158,7 @@ public class RelationLinkingEngine {
 
 			int r = 0;
 			for (Record record : records) {
-				System.out.println("Processing utterance: " + record.getUtterance());
+				System.out.println(r + ":Processing utterance: " + record.getUtterance());
 
 				Map<String, Result> results = new HashMap<String, Result>();
 
@@ -230,7 +229,6 @@ public class RelationLinkingEngine {
 			testOutput.flush();
 			testOutput.close();
 		}
-		TrainEngine te = new TrainEngine(trainOutputPath, testOutputPath, xgBoostOutputPath);
 	}
 
 	private void printCSVRow(String utteranceValue, String relationValue, String directValue, String gloveLexicalValue,

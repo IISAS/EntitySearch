@@ -37,8 +37,9 @@ public class GloVeEngine {
 
 		if (model == null) {
 			model = new GloVeSpace();
-			model = GloVeSpace.load(modelPath, false, false);
+			model = GloVeSpace.load(modelPath, true, false);
 		}
+		
 		if (this.doe == null)
 			this.doe = RelationLinkingEngine.getDBPediaOntologyExtractor();
 		if (this.fce == null)
@@ -52,8 +53,9 @@ public class GloVeEngine {
 
 		if (model == null) {
 			model = new GloVeSpace();
-			model = GloVeSpace.load(modelPath, false, false);
+			model = GloVeSpace.load(modelPath, true, false);
 		}
+		
 		if (this.lpe == null)
 			this.lpe = lpe;
 		if (this.doe == null)
@@ -69,7 +71,7 @@ public class GloVeEngine {
 
 		if (model == null) {
 			model = new GloVeSpace();
-			model = GloVeSpace.load(modelPath, false, false);
+			model = GloVeSpace.load(modelPath, true, false);
 		}
 		if (this.openIE == null)
 			this.openIE = openIE;
@@ -86,7 +88,7 @@ public class GloVeEngine {
 
 		if (model == null) {
 			model = new GloVeSpace();
-			model = GloVeSpace.load(modelPath, false, false);
+			model = GloVeSpace.load(modelPath, true, false);
 		}
 		if (this.qse == null)
 			this.qse = qse;
@@ -207,7 +209,7 @@ public class GloVeEngine {
 	private double getSentencesSimilarity(String sentence, String composedRelation) {
 		double similarity = 0;
 		if (canBeSentenceVectorized(sentence) && canBeSentenceVectorized(composedRelation)) {
-			similarity = model.cosineSimilarity(model.sentenceVector(sentence), model.sentenceVector(composedRelation));
+			similarity = model.distanceSimilarity(model.sentenceVector(sentence), model.sentenceVector(composedRelation));
 		}
 		return similarity;
 	}
@@ -215,12 +217,12 @@ public class GloVeEngine {
 	private double getSimilarity(String sentence, String word) {
 		double similarity = 0;
 		if (isWordInModel(word) && canBeSentenceVectorized(sentence))
-			similarity = model.cosineSimilarity(model.sentenceVector(sentence), model.vector(word));
+			similarity = model.distanceSimilarity(model.sentenceVector(sentence), model.vector(word));
 		return similarity;
 	}
 
 	private double getWordsSimilarity(String word1, String word2) {
-		double similarity = model.cosineSimilarity(word1, word2);
+		double similarity = model.distanceSimilarity(word1, word2);
 		return similarity;
 	}
 
