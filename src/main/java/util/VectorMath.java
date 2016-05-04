@@ -11,11 +11,15 @@ public class VectorMath {
 	 * Vectors are normalized on load, just need dot product:
 	 */
 	public static double cosineSimilarity(FloatMatrix vec1, FloatMatrix vec2) {
-		return vec1.dot(vec2) / vec1.squaredDistance(vec2);
+		double dotSim = vec1.dot(vec2);
+		double norm = vec1.norm2() * vec2.norm2();
+		return norm == 0 ? 1 : dotSim / norm;
 	}
 
 	public static double cosineSimilarity(DoubleMatrix vec1, DoubleMatrix vec2) {
-		return vec1.dot(vec2) / vec1.squaredDistance(vec2);
+		double dotSim = vec1.dot(vec2);
+		double norm = vec1.norm2() * vec2.norm2();
+		return norm == 0 ? 1 : dotSim / norm;
 	}
 
 	public static double distance(FloatMatrix vec1, final FloatMatrix vec2) {

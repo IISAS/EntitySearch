@@ -209,7 +209,7 @@ public class GloVeEngine {
 	private double getSentencesSimilarity(String sentence, String composedRelation) {
 		double similarity = 0;
 		if (canBeSentenceVectorized(sentence) && canBeSentenceVectorized(composedRelation)) {
-			similarity = model.distanceSimilarity(model.sentenceVector(sentence), model.sentenceVector(composedRelation));
+			similarity = model.cosineSimilarity(model.sentenceVector(sentence), model.sentenceVector(composedRelation));
 		}
 		return similarity;
 	}
@@ -217,17 +217,17 @@ public class GloVeEngine {
 	private double getSimilarity(String sentence, String word) {
 		double similarity = 0;
 		if (isWordInModel(word) && canBeSentenceVectorized(sentence))
-			similarity = model.distanceSimilarity(model.sentenceVector(sentence), model.vector(word));
+			similarity = model.cosineSimilarity(model.sentenceVector(sentence), model.vector(word.toLowerCase()));
 		return similarity;
 	}
 
 	private double getWordsSimilarity(String word1, String word2) {
-		double similarity = model.distanceSimilarity(word1, word2);
+		double similarity = model.cosineSimilarity(word1.toLowerCase(), word2.toLowerCase());
 		return similarity;
 	}
 
 	private boolean isWordInModel(String word) {
-		return model.contains(word);
+		return model.contains(word.toLowerCase());
 	}
 
 	private boolean canBeSentenceVectorized(String sentence) {
