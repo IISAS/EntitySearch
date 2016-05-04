@@ -30,7 +30,7 @@ public class RelationLinkingEngine {
 	private boolean allOverSimilarity = true;
 
 	private double similarity = 0.1;
-	private int firstResults = 10;
+	private int firstResults = 3;
 
 	private String datasetPath = "src/main/resources/data/webquestionsRelation.json";
 	private String dbPediaOntologyPath = "src/main/resources/data/dbpedia_2015-04.nt";
@@ -80,6 +80,16 @@ public class RelationLinkingEngine {
 	private DirectSearchEngine dse = null;
 	private GloVeEngine glove = null;
 	private WordNetEngine wordnet = null;
+
+	boolean testStarted = false;
+	private double precision = 0;
+	private double recall = 0;
+	private int TP = 0;
+	private int tTP = 0;
+	private int FP = 0;
+	private int tFP = 0;
+	private int FN = 0;
+	private int tFN = 0;
 
 	public RelationLinkingEngine() {
 	}
@@ -158,7 +168,6 @@ public class RelationLinkingEngine {
 			System.out.println(r + ":Processing utterance: " + record.getUtterance());
 
 			Map<String, Result> results = new HashMap<String, Result>();
-
 			if (directCheck)
 				results.putAll(addFoundRelations(dse.getRelations(record.getUtterance()), results,
 						METHOD_MAPPING_TYPE.DIRECT, null, record));
@@ -213,11 +222,30 @@ public class RelationLinkingEngine {
 			if (r < 3 * records.size() / 4) {
 				printFoundRelations(results, record.getUtterance(), trainOutput);
 			} else {
+				if (!testStarted) {
+					tTP = 0;
+					tFP = 0;
+					tFN = 0;
+					testStarted = true;
+				}
 				printFoundRelations(results, record.getUtterance(), testOutput);
 			}
 
 			r++;
 		}
+
+		System.out.println();
+		precision = ((double) TP / ((double) TP + (double) FP));
+		recall = ((double) TP / ((double) TP + (double) FN));
+		System.out.println("Precision = " + precision);
+		System.out.println("Recall = " + recall);
+		System.out.println("F1 = " + (2 * ((precision * recall) / (precision + recall))));
+		System.out.println();
+		precision = ((double) tTP / ((double) tTP + (double) tFP));
+		recall = ((double) tTP / ((double) tTP + (double) tFN));
+		System.out.println("Test Precision = " + precision);
+		System.out.println("Test Recall = " + recall);
+		System.out.println("Test F1 = " + (2 * ((precision * recall) / (precision + recall))));
 
 		csvOutput.flush();
 		csvOutput.close();
@@ -225,6 +253,7 @@ public class RelationLinkingEngine {
 		trainOutput.close();
 		testOutput.flush();
 		testOutput.close();
+
 	}
 
 	private void printCSVRow(String utteranceValue, String relationValue, String directValue, String gloveLexicalValue,
@@ -378,9 +407,12 @@ public class RelationLinkingEngine {
 
 		for (Entry<String, ArrayList<String>> rel : relations.entrySet()) {
 			for (String r : rel.getValue())
-				if (r.toLowerCase().compareTo(relation.toLowerCase()) == 0)
+				if (r.toLowerCase().compareTo(relation.toLowerCase()) == 0) {
 					return true;
+				}
 		}
+		FP++;
+		tFP++;
 		return false;
 	}
 
@@ -407,6 +439,18 @@ public class RelationLinkingEngine {
 		return null;
 	}
 
+	private ArrayList<String> getRelationsToDetect(Record record) {
+		ArrayList<String> rel = new ArrayList<String>();
+		for (Entry<String, ArrayList<String>> r : record.getRelations().entrySet()) {
+			rel.add(r.getKey().toString());
+		}
+		return rel;
+	}
+
+	private int getUndetected(ArrayList<String> rel) {
+		return rel.size();
+	}
+
 	@SuppressWarnings("hiding")
 	<String, Double extends Comparable<? super Double>> List<Entry<String, Double>> entriesSortedByValues(
 			Map<String, Double> map) {
@@ -428,12 +472,13 @@ public class RelationLinkingEngine {
 
 		List<Entry<String, Double>> sortedRelations = entriesSortedByValues(relations);
 
+		ArrayList<String> relationsToDetect = getRelationsToDetect(record);
+
 		Result result;
 		int r = 0;
 
 		for (Entry<String, Double> relation : sortedRelations) {
-			System.out.println(relation.getValue());
-			if (r == firstResults)
+			if (r == firstResults || relationsToDetect.isEmpty())
 				break;
 			if (relation.getKey() == null)
 				continue;
@@ -483,16 +528,29 @@ public class RelationLinkingEngine {
 				}
 			} else {
 				result = new Result(relation.getKey(), mappingType, detectionType, relation.getValue());
-				result.setDetectedFor(getDetectedFor(record, relation.getKey()));
+				boolean detected = isRelationDetected(relation.getKey(), record);
+				result.setDetected(detected);
+				String detFor = getDetectedFor(record, relation.getKey());
+				if (detected) {
+					TP++;
+					tTP++;
+					if (!relationsToDetect.remove(detFor)) {
+						TP--;
+						tTP--;
+					}
+				}
+				result.setDetectedFor(detFor);
 				results.put(relation.getKey().toLowerCase(), result);
 			}
 
-			result.setDetected(isRelationDetected(relation.getKey(), record));
 			result.setNumberOfRelations(getNumberOfRelations(record, false));
 			result.setNumberOfAllRelations(getNumberOfRelations(record, true));
 			results.replace(relation.getKey().toLowerCase(), result);
 			r++;
 		}
+
+		FN += getUndetected(relationsToDetect);
+		tFN += getUndetected(relationsToDetect);
 
 		return results;
 	}
