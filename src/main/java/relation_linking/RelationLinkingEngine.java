@@ -98,7 +98,8 @@ public class RelationLinkingEngine {
 			throws ClassNotFoundException, IOException, JWNLException, InterruptedException {
 
 		RelationLinkingEngine rle = new RelationLinkingEngine();
-		rle.runDetection();
+		// rle.runDetection();
+		rle.calculateXGBoostStatistics();
 	}
 
 	private void runDetection() throws IOException, ClassNotFoundException, JWNLException, InterruptedException {
@@ -254,6 +255,37 @@ public class RelationLinkingEngine {
 		testOutput.flush();
 		testOutput.close();
 
+	}
+
+	private void calculateXGBoostStatistics() throws IOException {
+		FileReader test = new FileReader("/Users/fjuras/Downloads/xgboost-0.47/testedTrain");
+		FileReader pred = new FileReader("/Users/fjuras/Downloads/xgboost-0.47/predicted.txt");
+
+		BufferedReader brT = new BufferedReader(test);
+		BufferedReader brP = new BufferedReader(pred);
+		String lineT;
+		String lineP;
+		while ((lineT = brT.readLine()) != null) {
+			lineP = brP.readLine();
+			if (lineT.startsWith("1")) {
+				if (lineP.startsWith("0")) {
+					FN++;
+				} else {
+					TP++;
+				}
+			} else {
+				if (lineP.startsWith("1")) {
+					FP++;
+				}
+			}
+		}
+		System.out.println();
+		precision = ((double) TP / ((double) TP + (double) FP));
+		recall = ((double) TP / ((double) TP + (double) FN));
+		System.out.println("Precision = " + precision);
+		System.out.println("Recall = " + recall);
+		System.out.println("F1 = " + (2 * ((precision * recall) / (precision + recall))));
+		System.out.println();
 	}
 
 	private void printCSVRow(String utteranceValue, String relationValue, String directValue, String gloveLexicalValue,
