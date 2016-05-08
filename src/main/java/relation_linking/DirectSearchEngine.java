@@ -20,10 +20,6 @@ public class DirectSearchEngine {
 		this.fce = RelationLinkingEngine.getFBCategoriesExtractor();
 	}
 
-	protected int getMatchedInSentence() {
-		return matchedInSentence;
-	}
-
 	protected Map<String, Double> getRelations(String sentence)
 			throws FileNotFoundException, UnsupportedEncodingException {
 
