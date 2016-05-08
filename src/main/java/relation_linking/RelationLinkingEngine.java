@@ -98,7 +98,7 @@ public class RelationLinkingEngine {
 			throws ClassNotFoundException, IOException, JWNLException, InterruptedException {
 
 		RelationLinkingEngine rle = new RelationLinkingEngine();
-		// rle.runDetection();
+		rle.runDetection();
 		rle.calculateXGBoostStatistics();
 	}
 
@@ -261,7 +261,9 @@ public class RelationLinkingEngine {
 		FileReader test = new FileReader("/Users/fjuras/Downloads/xgboost-0.47/testedTrain");
 		FileReader pred = new FileReader("/Users/fjuras/Downloads/xgboost-0.47/predicted.txt");
 
+		@SuppressWarnings("resource")
 		BufferedReader brT = new BufferedReader(test);
+		@SuppressWarnings("resource")
 		BufferedReader brP = new BufferedReader(pred);
 		String lineT;
 		String lineP;
